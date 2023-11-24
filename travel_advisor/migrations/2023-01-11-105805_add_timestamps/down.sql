@@ -1,0 +1,1 @@
+ALTER TABLE comments DROP created_at, updated_at;

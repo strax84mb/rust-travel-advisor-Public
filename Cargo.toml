@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "travel_advisor",
+    "test_annotations"
+]
