@@ -27,3 +27,4 @@ log = "0.4.18"
 mockall = "0.11.4"
 actix-rt = "2.8.0"
 test_annotations = { path = "../test_annotations" }
+uuid = { version = "1.6.1", features = ["v4"] }
