@@ -58,7 +58,7 @@ pub mod comments {
                 Some(now) => now,
                 None => return Err(Error::from_str("failed to construct naive date time")),
             };
-            let now: DateTime<Utc> = DateTime::from_utc(now, Utc);
+            let now: DateTime<Utc> = now.and_utc();
             Ok(now)
         }
 
