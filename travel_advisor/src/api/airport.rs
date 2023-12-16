@@ -45,7 +45,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 #[get("/v1/airports")]
 async fn get_airports(airport_service: Data<Arc<dyn AirportService + Send + Sync>>) -> impl Responder {
     // load airports
-    let result = match airport_service.into_inner().get_all().await {
+    let result = match airport_service.into_inner().get_all() {
         Ok(loaded) => loaded,
         Err(err) => return resolve_error(err, None),
     };
@@ -65,7 +65,7 @@ async fn get_airport_by_id(
         Err(err) => return respond_bad_request(format!("invalid ID: {}", err.to_string())),
     };
     // load airport
-    let result = match airport_service.into_inner().get_by_id(id).await {
+    let result = match airport_service.into_inner().get_by_id(id) {
         Ok(airport) => match airport {
             Some(airport) => AirportDto::from_model(&airport),
             None => return respond_not_found("airport not found"),
@@ -84,7 +84,7 @@ async fn create_airpot(
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> impl Responder {
     // validate access right
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]).await {
+    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
         Err(err) => return respond_unauthorized(Some(err.to_string())),
         _ => (),
     };
@@ -95,7 +95,7 @@ async fn create_airpot(
     };
     let airport = dto.to_model();
     // save new airport
-    match airport_service.into_inner().create(airport).await {
+    match airport_service.into_inner().create(airport) {
         Ok(final_airport) => respond_ok(Some(final_airport)),
         Err(err) => resolve_error(err, None),
     }
@@ -109,7 +109,7 @@ async fn update_airpot(
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> impl Responder {
     // validate access right
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]).await {
+    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
         Err(err) => return respond_unauthorized(Some(err.to_string())),
         _ => (),
     };
@@ -120,7 +120,7 @@ async fn update_airpot(
     };
     let airport = dto.to_model();
     // save new airport
-    match airport_service.into_inner().update(airport).await {
+    match airport_service.into_inner().update(airport) {
         Ok(()) => respond_created(None::<i8>),
         Err(err) => resolve_error(err, None),
     }
@@ -133,7 +133,7 @@ async fn delete_airpot(
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> impl Responder {
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]).await {
+    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
         Err(err) => return respond_unauthorized(Some(err.to_string())),
         _ => (),
     };
@@ -143,7 +143,7 @@ async fn delete_airpot(
         Err(err) => return respond_bad_request(err.to_string()),
     };
     // delete airport
-    match airport_service.into_inner().delete(id).await {
+    match airport_service.into_inner().delete(id) {
         Ok(()) => respond_ok(None::<i8>),
         Err(err) => resolve_error(err, None),
     }
@@ -157,12 +157,12 @@ async fn upload_airpots(
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> impl Responder {
     // validate access right
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]).await {
+    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
         Err(err) => return respond_unauthorized(Some(err.to_string())),
         _ => (),
     };
     // save airports
-    match airport_service.into_inner().save_airports(payload.to_vec().as_slice()).await {
+    match airport_service.into_inner().save_airports(payload.to_vec().as_slice()) {
         Ok(()) => respond_ok(None::<i8>),
         Err(err) => resolve_error(err, Some("failed to save all airports")),
     }

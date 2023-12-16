@@ -4,6 +4,7 @@ mod city;
 mod user;
 mod route;
 mod comment;
+mod entities;
 
 pub type Database = db_context::Database;
 

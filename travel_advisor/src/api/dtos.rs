@@ -20,14 +20,15 @@ pub struct CityDto {
 
 impl CityDto {
     pub fn from_model(c: &City) -> Self {
-        let airports: Vec<AirportDto> = c.airports.iter()
+        /*let airports: Vec<AirportDto> = c.airports.iter()
             .map(|a| AirportDto::from_model(a))
-            .collect();
+            .collect();*/
         
         CityDto {
             id: c.id,
             name: c.name.clone(),
-            airports: airports,
+            //airports: airports,
+            airports: vec![],
         }
     }
 }

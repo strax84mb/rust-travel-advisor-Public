@@ -104,7 +104,7 @@ async fn save_comment(
     comment.city_id = city_id;
     let mut comment = comment.to_model();
     // get user
-    let user = match auth_service.into_inner().get_user(extract_auth(&req)).await {
+    let user = match auth_service.into_inner().get_user(extract_auth(&req)) {
         Ok(user) => user,
         Err(err) => return resolve_error(err, Some("failed to load user")),
     };
@@ -126,7 +126,7 @@ async fn update_comment(
 ) -> impl Responder {
     let comment_service = comment_service.into_inner();
     // get user
-    let user = match auth_service.into_inner().get_user(extract_auth(&req)).await {
+    let user = match auth_service.into_inner().get_user(extract_auth(&req)) {
         Ok(user) => user,
         Err(err) => return resolve_error(err, Some("failed to load user")),
     };
@@ -161,7 +161,7 @@ async fn delete_comment(
     comment_service: Data<Arc<dyn CommentService + Send + Sync>>,
 ) -> impl Responder {
     // get user
-    let user = match auth_service.into_inner().get_user(extract_auth(&req)).await {
+    let user = match auth_service.into_inner().get_user(extract_auth(&req)) {
         Ok(user) => user,
         Err(err) => return resolve_error(err, Some("failed to load user")),
     };

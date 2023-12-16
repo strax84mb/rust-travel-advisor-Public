@@ -13,21 +13,20 @@ use crate::{
 
 use super::UserData;
 
-#[async_trait]
 pub trait CityService {
-    async fn get_all(&self) -> Result<Vec<City>, Error>;
-    async fn get_full(&self, id: i64) -> Result<Option<City>, Error>;
-    async fn save_cities(&self, sv_text: &[u8]) -> Result<(), Error>;
+    fn get_all(&self) -> Result<Vec<City>, Error>;
+    fn get_full(&self, id: i64) -> Result<Option<City>, Error>;
+    fn new(&self, name: String) -> Result<City, Error>;
+    fn save_cities(&self, sv_text: &[u8]) -> Result<(), Error>;
 }
 
-#[async_trait]
 pub trait AirportService {
-    async fn get_all(&self) -> Result<Vec<Airport>, Error>;
-    async fn get_by_id(&self, id: i64) -> Result<Option<Airport>, Error>;
-    async fn create(&self, airport: Airport) -> Result<Airport, Error>;
-    async fn update(&self, airport: Airport) -> Result<(), Error>;
-    async fn delete(&self, id: i64) -> Result<(), Error>;
-    async fn save_airports(&self, sv_text: &[u8]) -> Result<(), Error>;
+    fn get_all(&self) -> Result<Vec<Airport>, Error>;
+    fn get_by_id(&self, id: i64) -> Result<Option<Airport>, Error>;
+    fn create(&self, airport: Airport) -> Result<Airport, Error>;
+    fn update(&self, airport: Airport) -> Result<(), Error>;
+    fn delete(&self, id: i64) -> Result<(), Error>;
+    fn save_airports(&self, sv_text: &[u8]) -> Result<(), Error>;
 }
 
 #[async_trait]
@@ -40,9 +39,8 @@ pub trait CommentService {
     async fn get_by_id(&self, id: i64) -> Result<Option<Comment>, Error>;
 }
 
-#[async_trait]
 pub trait AuthService {
-    async fn create_jwt(&self, user: User) -> Result<UserData, Error>;
-    async fn get_user(&self, header: Option<Result<&str, ToStrError>>) -> Result<User, Error>;
-    async fn has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<bool, Error>;
+    fn create_jwt(&self, user: User) -> Result<UserData, Error>;
+    fn get_user(&self, header: Option<Result<&str, ToStrError>>) -> Result<User, Error>;
+    fn has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<bool, Error>;
 }

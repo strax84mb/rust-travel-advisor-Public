@@ -36,7 +36,7 @@ async fn login(
     user_repo: Data<Arc<dyn UserRepository + Send + Sync>>,
 ) -> impl Responder {
     let request = payload.into_inner();
-    let user = match user_repo.into_inner().get_by_email_and_pass(request.email, request.pass).await {
+    let user = match user_repo.into_inner().get_by_email_and_pass(request.email, request.pass) {
         Ok(user) => match user {
             Some(user) => user,
             None => return respond_not_found("incorrect email or password"),
@@ -44,7 +44,7 @@ async fn login(
         Err(err) => return resolve_error(err, Some("failed to load user")),
     };
     
-    let user_data = match auth_service.create_jwt(user).await {
+    let user_data = match auth_service.create_jwt(user) {
         Ok(data) => data,
         Err(err) => return resolve_error(err, Some("failed to generate JWT")),
     };

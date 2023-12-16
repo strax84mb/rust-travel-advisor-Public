@@ -1,22 +1,31 @@
 pub mod cities {
     use std::sync::Arc;
 
-    use async_trait::async_trait;
-    use sqlx::FromRow;
+    use diesel::{
+        insert_into,
+        sql_function,
+        prelude::*,
+    };
 
     use crate::{
         model::City,
+        schema::cities::dsl::*,
         util::app_errors::Error,
     };
-    use super::super::Database;
+    use super::super::{
+        Database,
+        entities::CityDB,
+        db_context::db_macros::get_connection,
+    };
 
-    #[async_trait]
     pub trait CityRepository {
-        async fn get_all(&self) -> Result<Vec<City>, Error>;
-        async fn get_by_id(&self, id: i64) -> Result<Option<City>, Error>;
-        async fn new(&self, name: String) -> Result<City, Error>;
-        async fn get_by_name(&self, name: String) -> Result<Option<City>, Error>;
+        fn get_all(&self) -> Result<Vec<City>, Error>;
+        fn get_by_id(&self, id: i64) -> Result<Option<City>, Error>;
+        fn new(&self, name: String) -> Result<City, Error>;
+        fn get_by_name(&self, name: String) -> Result<Option<City>, Error>;
     }
+
+    sql_function! { fn last_insert_id() -> BigInt; }
 
     struct CityRepositoryImpl {
         db: Arc<Database>,
@@ -28,80 +37,80 @@ pub mod cities {
         })
     }
 
-    #[async_trait]
     impl CityRepository for CityRepositoryImpl {
 
-        async fn get_all(&self) ->  Result<Vec<City> ,Error> {
-            let pool = self.db.connections.as_ref();
-            match sqlx::query("SELECT id, name FROM cities").fetch_all(pool).await {
-                Ok(rows) => {
-                    let result: Result<Vec<City>, sqlx::Error> = rows.iter().map(|row| City::from_row(row)).collect();
-                    match result {
-                        Ok(v) => Ok(v),
-                        Err(err) => Err(Error::underlying(err.to_string()))
-                    }
-                },
-                Err(err) => Err(Error::underlying(err.to_string()))
+        fn get_all(&self) ->  Result<Vec<City> ,Error> {
+            let conn = &mut get_connection!(self.db);
+            match cities.select(CityDB::as_select()).load(conn) {
+                Ok(result) => Ok(result.iter().map(|c| c.to_city()).collect()),
+                Err(err) => Err(Error::underlying(err.to_string())),
             }
         }
 
-        async fn get_by_id(&self, id: i64) -> Result<Option<City>, Error> {
-            let pool = self.db.connections.as_ref();
-            let result = sqlx::query("SELECT id, name FROM cities WHERE id = ?")
-                .bind(id)
-                .fetch_optional(pool)
-                .await;
-            match result {
-                Ok(row) => match row {
-                    Some(row) => match City::from_row(&row) {
-                        Ok(city) => Ok(Some(city)),
-                        Err(err) => Err(Error::underlying(err.to_string())),
+        fn get_by_id(&self, city_id: i64) -> Result<Option<City>, Error> {
+            let conn = &mut get_connection!(self.db);
+            match cities
+                .find(city_id)
+                .select(CityDB::as_select())
+                .first(conn)
+                .optional() {
+                    Ok(result) => match result {
+                        Some(result) => Ok(Some(result.to_city())),
+                        None => Ok(None),
                     },
-                    None => Ok(None),
-                },
-                Err(sqlx::Error::RowNotFound) => Err(Error::not_found()),
-                Err(err) => Err(Error::underlying(err.to_string())),
-            }
+                    Err(err) => Err(Error::underlying(err.to_string())),
+                }
         }
 
-        async fn new(&self, name: String) -> Result<City, Error> {
-            let pool = self.db.connections.as_ref();
-            let result = sqlx::query("INSERT INTO cities (name) VALUES (?)")
-                .bind(name.clone())
-                .execute(pool)
-                .await;
+        fn new(&self, city_name: String) -> Result<City, Error> {
+            let conn = &mut get_connection!(self.db);
+            let result = insert_into(cities)
+                .values(name.eq(city_name.clone()))
+                .execute(conn);
             match result {
-                Ok(row) => {
-                    if row.rows_affected() == 0 {
-                        return Err(Error::underlying("no rows inserted".to_string()));
-                    }
-
-                    let id = row.last_insert_id() as i64;
-
-                    Ok(City::new(id, name))
-                },
+                Err(err) => return Err(Error::underlying(err.to_string())),
+                Ok(size) if size > 0 => (),
+                _ => return Err(Error::from_str("nothing was inserted")),
+            };
+            match cities.select(last_insert_id()).load::<i64>(conn) {
                 Err(err) => Err(Error::underlying(err.to_string())),
+                Ok(result) if result.len() > 0 => Ok(City {
+                    id: result[0],
+                    name: city_name,
+                    airports: vec![],
+                    comments: vec![],
+                }),
+                _ => Ok(City {
+                    id: -1,
+                    name: city_name,
+                    airports: vec![],
+                    comments: vec![],
+                }),
             }
         }
 
-        async fn get_by_name(&self, name: String) -> Result<Option<City>, Error> {
-            let pool = self.db.connections.as_ref();
-            let statement = sqlx::query(
-                "SELECT id, name FROM cities WHERE LOWER(name) = ?"
-                ).bind(name.clone().to_lowercase())
-                .fetch_optional(pool);
-            match statement.await {
-                Ok(row) => match row {
-                    Some(row) => match City::from_row(&row) {
-                        Ok(city) => Ok(Some(city)),
-                        Err(err) => Err(Error::underlying(format!("failed to read row: {}", err.to_string()))),
-                    }, 
-                    None => Ok(None),
-                },
-                Err(err) => Err(Error::underlying(format!("failed execute query: {}", err.to_string()))),
-            }
+        fn get_by_name(&self, city_name: String) -> Result<Option<City>, Error> {
+            let conn = &mut get_connection!(self.db);
+            match cities
+                .filter(name.eq(city_name.clone()))
+                .select(CityDB::as_select())
+                .first(conn)
+                .optional() {
+                    Ok(result) => match result {
+                        Some(result) => Ok(Some(result.to_city())),
+                        None => Ok(None),
+                    },
+                    Err(err) => Err(Error::underlying(err.to_string())),
+                }
         }
 
     }
 
+}
+
+#[cfg(test)]
+mod db_test {
+    #[test]
+    fn test_list_columns() {
+    }
 }

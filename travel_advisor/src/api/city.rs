@@ -39,7 +39,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 #[get("/v1/cities")]
 async fn get_cities(city_service: Data<Arc<dyn CityService + Send + Sync>>) -> impl Responder {
     // load cities
-    let result = match city_service.into_inner().get_all().await {
+    let result = match city_service.into_inner().get_all() {
         Ok(cities) => cities,
         Err(err) => return resolve_error(err, None),
     };
@@ -62,7 +62,7 @@ async fn  get_city_by_id(
         Err(err) => return respond_bad_request(format!("failed to parse city ID: {}", err.to_string())),
     };
     // load city
-    let city = match city_service.into_inner().get_full(city_id).await {
+    let city = match city_service.into_inner().get_full(city_id) {
         Ok(city) => match city {
             Some(city) => CityDto::from_model(&city),
             None => return respond_not_found("city not found"),
@@ -80,13 +80,13 @@ async fn upload_cities(
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>,
     city_service: Data<Arc<dyn CityService + Send + Sync>>,
 ) -> impl Responder {
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]).await {
+    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
         Ok(found) if !found => return respond_unauthorized(None),
         Err(err) => return resolve_error(err, Some("failed to check JWT")),
         _ => (),
     }
 
-    match city_service.into_inner().save_cities(payload.to_vec().as_slice()).await {
+    match city_service.into_inner().save_cities(payload.to_vec().as_slice()) {
         Ok(()) => respond_ok(Some("saved all cities")),
         Err(err) => resolve_error(err, Some("failed to save all cities")),
     }

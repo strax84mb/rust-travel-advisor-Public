@@ -1,69 +1,23 @@
-use sqlx::FromRow;
-
-use crate::{
-    util::app_errors::Error,
-    model::User
-};
-use super::db_context::Database;
-
-impl Database {
-    pub async fn get_user(&self, id: i64) -> Result<User, Error> {
-        let result = sqlx::query("SELECT id, email, pass, roles FROM users WHERE id = ?")
-            .bind(id)
-            .fetch_one(self.connections.as_ref())
-            .await;
-        match result {
-            Ok(row) => {
-                match User::from_row(&row) {
-                    Ok(user) => Ok(user),
-                    Err(err) => Err(Error::underlying(err.to_string())),
-                }
-            },
-            Err(sqlx::Error::RowNotFound) => Err(Error::not_found()),
-            Err(err) => Err(Error::underlying(err.to_string())),
-        }
-    }
-
-    pub async fn get_user_by_email_and_pass(&self, email: String, password: String) -> Result<User, Error> {
-        let pass = md5::compute(password.as_bytes());
-        let pass: String = pass.iter().map(|&q| q as char).collect();
-        let result = sqlx::query("SELECT id, email, pass, roles FROM users WHERE email = ? AND pass = ?")
-            .bind(email)
-            .bind(pass)
-            .fetch_one(self.connections.as_ref())
-            .await;
-        match result {
-            Ok(row) => {
-                match User::from_row(&row) {
-                    Ok(user) => Ok(user),
-                    Err(err) => Err(Error::underlying(err.to_string())),
-                }
-            },
-            Err(sqlx::Error::RowNotFound) => Err(Error::not_found()),
-            Err(err) => Err(Error::underlying(err.to_string())),
-        }
-    }
-}
-
 pub mod users {
     use std::sync::Arc;
 
-    use async_trait::async_trait;
-    use sqlx::{
-        FromRow,
-    };
+    use diesel::prelude::*;
 
     use crate::{
         Database,
         util::app_errors::Error,
-        model::User
+        model::{
+            User,
+            UserDB,
+        },
+        schema::users::dsl as user_dsl,
     };
+    use super::super::db_context::db_macros::get_connection;
 
-    #[async_trait]
     pub trait UserRepository {
-        async fn get_by_id(&self, id: i64) -> Result<User, Error>;
-        async fn get_by_username(&self, name: String) -> Result<User, Error>;
-        async fn get_by_email_and_pass(&self, email: String, password: String) -> Result<Option<User>, Error>;
+        fn get_by_id(&self, id: i64) -> Result<Option<User>, Error>;
+        fn get_by_username(&self, name: String) -> Result<Option<User>, Error>;
+        fn get_by_email_and_pass(&self, email: String, password: String) -> Result<Option<User>, Error>;
     }
 
     pub fn new_user_repository(db: Arc<Database>) -> Arc<impl UserRepository> {
@@ -76,44 +30,39 @@ pub mod users {
         db: Arc<Database>,
     }
 
-    #[async_trait]
     impl UserRepository for UserRepositoryImpl {
     
-        async fn get_by_id(&self, id: i64) -> Result<User, Error> {
-            let result = sqlx::query("SELECT id, email, pass, roles FROM users WHERE id = ?")
-                .bind(id)
-                .fetch_optional(self.db.connections.as_ref())
-                .await;
-            match result {
-                Ok(row) => match row {
-                    Some(row) => match User::from_row(&row) {
-                        Ok(user) => Ok(user),
-                        Err(err) => Err(Error::underlying(err.to_string())),
+        fn get_by_id(&self, id: i64) -> Result<Option<User>, Error> {
+            let conn = &mut get_connection!(self.db);
+            match user_dsl::users
+                .find(id)
+                .select(UserDB::as_select())
+                .first(conn)
+                .optional() {
+                    Ok(result) => match result {
+                        Some(user) => Ok(Some(User::from_db(&user))),
+                        None => Ok(None),
                     },
-                    None => Err(Error::not_found()),
+                    Err(err) => Err(Error::underlying(err.to_string())),
                 }
-                Err(err) => Err(Error::underlying(err.to_string())),
-            }
         }
     
-        async fn get_by_username(&self, name: String) -> Result<User, Error> {
-            let result = sqlx::query("SELECT id, email, pass, roles FROM users WHERE email = ?")
-                .bind(name)
-                .fetch_optional(self.db.connections.as_ref())
-                .await;
-            match result {
-                Ok(row) => match row {
-                    Some(row) => match User::from_row(&row) {
-                        Ok(user) => Ok(user),
-                        Err(err) => Err(Error::underlying(err.to_string())),
+        fn get_by_username(&self, name: String) -> Result<Option<User>, Error> {
+            let conn = &mut get_connection!(self.db);
+            match user_dsl::users
+                .filter(user_dsl::email.eq(name))
+                .select(UserDB::as_select())
+                .first(conn)
+                .optional() {
+                    Ok(result) => match result {
+                        Some(user) => Ok(Some(User::from_db(&user))),
+                        None => Ok(None),
                     },
-                    None => Err(Error::not_found()),
+                    Err(err) => Err(Error::underlying(err.to_string())),
                 }
-                Err(err) => Err(Error::underlying(err.to_string())),
-            }
         }
 
-        async fn get_by_email_and_pass(&self, email: String, password: String) -> Result<Option<User>, Error> {
+        fn get_by_email_and_pass(&self, email: String, password: String) -> Result<Option<User>, Error> {
             // calculate hash
             let pass = md5::compute(password.as_bytes());
             let mut chars: Vec<char> = Vec::new();
@@ -132,17 +81,16 @@ pub mod users {
             let pass: String = chars.iter().collect();
             let pass = pass.to_lowercase();
             // load user
-            let result = sqlx::query("SELECT id, email, pass, roles FROM users WHERE email = ? AND pass = ?")
-                .bind(email)
-                .bind(pass)
-                .fetch_optional(self.db.connections.as_ref())
-                .await;
+            let conn = &mut get_connection!(self.db);
+            let result = user_dsl::users
+                .filter(user_dsl::email.eq(email))
+                .filter(user_dsl::pass.eq(pass))
+                .select(UserDB::as_select())
+                .first(conn)
+                .optional();
             match result {
-                Ok(row) => match row {
-                    Some(row) => match User::from_row(&row) {
-                        Ok(user) => Ok(Some(user)),
-                        Err(err) => Err(Error::underlying(err.to_string())),
-                    },
+                Ok(result) => match result {
+                    Some(user) => Ok(Some(User::from_db(&user))),
                     None => Ok(None),
                 },
                 Err(err) => Err(Error::underlying(err.to_string())),

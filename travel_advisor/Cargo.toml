@@ -11,7 +11,7 @@ edition = "2021"
 [dependencies]
 actix-web = "4.2.1"
 # actix-multipart = "0.4.0"
-# diesel = {version = "2.0.0", default-features = false, features = ["mysql"]}
+diesel = { version = "2.1.0", default-features = false, features = ["mysql", "r2d2", "chrono", "uuid"] }
 # dotenv = "0.15.0"
 jsonwebtoken = "8.1.1"
 sqlx = { version = "0.6.2", features = ["mysql", "runtime-actix-rustls", "chrono"]}
@@ -28,3 +28,4 @@ mockall = "0.11.4"
 actix-rt = "2.8.0"
 test_annotations = { path = "../test_annotations" }
 uuid = { version = "1.6.1", features = ["v4"] }
+r2d2 = "0.8.10"

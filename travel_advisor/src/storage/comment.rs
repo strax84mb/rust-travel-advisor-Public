@@ -83,7 +83,7 @@ pub mod comments {
     impl CommentRepository for CommentRepositoryImpl {
 
         async fn create(&self, comment: Comment) -> Result<Comment, Error> {
-            let now = match self.current_date_time() {
+            /*let now = match self.current_date_time() {
                 Ok(now) => now,
                 Err(err) => return Err(Error::underlying(format!("failed to timestamp: {}", err.to_string()))),
             };
@@ -138,27 +138,30 @@ pub mod comments {
                         format!("failed to rollback: {}, for error: {}", err2.to_string(), err.to_string())
                     )),
                 }
-            }
+            }*/
+            Err(Error::from_str(""))
         }
     
         async fn get_by_city(&self, city_id: i64) -> Result<Vec<Comment>, Error> {
-            let statement = sqlx::query("SELECT id, city_id, user_id, `text`, created_at, updated_at FROM comments WHERE city_id = ?")
+            /*let statement = sqlx::query("SELECT id, city_id, user_id, `text`, created_at, updated_at FROM comments WHERE city_id = ?")
                 .bind(city_id)
                 .fetch_all(self.db.connections.as_ref())
                 .await;
-            self.handle_rows(statement)
+            self.handle_rows(statement)*/
+            Err(Error::from_str(""))
         }
         
         async fn get_by_user(&self, user_id: i64) -> Result<Vec<Comment>, Error> {
-            let statement = sqlx::query("SELECT id, city_id, user_id, `text`, created_at, updated_at FROM comments WHERE user_id = ?")
+            /*let statement = sqlx::query("SELECT id, city_id, user_id, `text`, created_at, updated_at FROM comments WHERE user_id = ?")
                 .bind(user_id)
                 .fetch_all(self.db.connections.as_ref())
                 .await;
-            self.handle_rows(statement)
+            self.handle_rows(statement)*/
+            Err(Error::from_str(""))
         }
     
         async fn update(&self, id: i64, text: String) -> Result<(), Error> {
-            let now = match self.current_date_time() {
+            /*let now = match self.current_date_time() {
                 Ok(now) => now,
                 Err(err) => return Err(Error::underlying(format!("failed to timestamp: {}", err.to_string()))),
             };
@@ -177,11 +180,12 @@ pub mod comments {
                     }
                 },
                 Err(err) => Err(Error::underlying(format!("failed to execute statement: {}", err.to_string()))),
-            }
+            }*/
+            Err(Error::from_str(""))
         }
     
         async fn delete(&self, id: i64) -> Result<(), Error> {
-            let statement = sqlx::query("DELETE FROM comments WHERE id = ?")
+            /*let statement = sqlx::query("DELETE FROM comments WHERE id = ?")
                 .bind(id)
                 .execute(self.db.connections.as_ref());
             match statement.await {
@@ -193,21 +197,23 @@ pub mod comments {
                     }
                 },
                 Err(err) => Err(Error::underlying(format!("failed to execute statement: {}", err.to_string()))),
-            }
+            }*/
+            Err(Error::from_str(""))
         }
         
         async fn delete_for_city(&self, city_id: i64) -> Result<(), Error> {
-            let statement = sqlx::query("DELETE FROM comments WHERE city_id = ?")
+            /*let statement = sqlx::query("DELETE FROM comments WHERE city_id = ?")
                 .bind(city_id)
                 .execute(self.db.connections.as_ref());
             match statement.await {
                 Ok(_) => Ok(()),
                 Err(err) => Err(Error::underlying(format!("failed to execute statement: {}", err.to_string()))),
-            }
+            }*/
+            Err(Error::from_str(""))
         }
     
         async fn get_by_id(&self, id: i64) -> Result<Option<Comment>, Error> {
-            let statement = sqlx::query(
+            /*let statement = sqlx::query(
                 "SELECT id, city_id, user_id, `text`, created_at, updated_at FROM comments WHERE id = ?"
                 ).bind(id)
                 .fetch_optional(self.db.connections.as_ref());
@@ -220,7 +226,8 @@ pub mod comments {
                     None => Ok(None),
                 },
                 Err(err) => Err(Error::underlying(format!("failed to execute query: {}", err.to_string()))),
-            }
+            }*/
+            Err(Error::from_str(""))
         }
                 
     }

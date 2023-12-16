@@ -111,7 +111,7 @@ pub mod services {
     #[async_trait]
     impl AuthService for AuthServiceImpl {
 
-        async fn create_jwt(&self, user: User) -> Result<UserData, Error> {
+        fn create_jwt(&self, user: User) -> Result<UserData, Error> {
             let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
                 Ok(v) => v.as_millis() as usize,
                 Err(err) => {
@@ -149,7 +149,7 @@ pub mod services {
             }
         }
 
-        async fn get_user(&self, header: Option<Result<&str, ToStrError>>) -> Result<User, Error> {
+        fn get_user(&self, header: Option<Result<&str, ToStrError>>) -> Result<User, Error> {
             let claims = match self.decode_jwt(header) {
                 Ok(claims) => claims,
                 Err(err) => {
@@ -160,8 +160,11 @@ pub mod services {
                 },
             };
 
-            let user = match self.user_repo.get_by_username(claims.sub.clone()).await {
-                Ok(user) => user,
+            let user = match self.user_repo.get_by_username(claims.sub.clone()) {
+                Ok(user) => match user {
+                    Some(user) => user,
+                    None => return Err(Error::not_found()),
+                },
                 Err(err) => {
                     error!("failed to load user: {}", err.to_string());
                     return Err(Error::underlying(
@@ -173,9 +176,9 @@ pub mod services {
             Ok(user)
         }
 
-        async fn has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<bool, Error> {
+        fn has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<bool, Error> {
             let roles: Vec<String> = roles.iter().map(|&s| s.to_string()).collect();
-            let user = match self.get_user(header).await {
+            let user = match self.get_user(header) {
                 Ok(user) => user,
                 Err(err) => {
                     error!("failed to load user roles: {}", err.to_string());

@@ -1,7 +1,6 @@
 pub mod services {
     use std::sync::Arc;
 
-    use async_trait::async_trait;
     use log::error;
 
     use crate::{
@@ -29,30 +28,29 @@ pub mod services {
         airport_repo: Arc<dyn AirportRepository + Sync + Send>,
     }
 
-    #[async_trait]
     impl AirportService for AirportServiceImpl {
 
-        async fn get_all(&self) -> Result<Vec<Airport>, Error> {
-            self.airport_repo.get_all().await
+        fn get_all(&self) -> Result<Vec<Airport>, Error> {
+            self.airport_repo.get_all()
         }
 
-        async fn get_by_id(&self, id: i64) -> Result<Option<Airport>, Error> {
-            self.airport_repo.get_by_id(id).await
+        fn get_by_id(&self, id: i64) -> Result<Option<Airport>, Error> {
+            self.airport_repo.get_by_id(id)
         }
 
-        async fn create(&self, airport: Airport) -> Result<Airport, Error> {
-            self.airport_repo.new(&airport).await
+        fn create(&self, airport: Airport) -> Result<Airport, Error> {
+            self.airport_repo.new(&airport)
         }
 
-        async fn update(&self, airport: Airport) -> Result<(), Error> {
-            self.airport_repo.update(airport).await
+        fn update(&self, airport: Airport) -> Result<(), Error> {
+            self.airport_repo.update(airport)
         }
 
-        async fn delete(&self, id: i64) -> Result<(), Error> {
-            self.airport_repo.delete(id).await
+        fn delete(&self, id: i64) -> Result<(), Error> {
+            self.airport_repo.delete(id)
         }
 
-        async fn save_airports(&self, sv_text: &[u8]) -> Result<(), Error> {
+        fn save_airports(&self, sv_text: &[u8]) -> Result<(), Error> {
             let mut count: i64 = 0;
             let mut csv_reader = csv::Reader::from_reader(sv_text);
             for record in csv_reader.records() {
@@ -64,7 +62,7 @@ pub mod services {
                     },
                 };
                 let city_name = record[0].to_string();
-                let city = match self.city_repo.get_by_name(city_name.clone()).await {
+                let city = match self.city_repo.get_by_name(city_name.clone()) {
                     Ok(city) => match city {
                         Some(city) => city,
                         None => {
@@ -82,7 +80,7 @@ pub mod services {
                     city_id: city.id,
                     name: record[1].to_string(),
                 };
-                match self.airport_repo.new(&airport).await {
+                match self.airport_repo.new(&airport) {
                     Ok(_) => count += 1,
                     Err(err) => {
                         error!("only pocessed {}: failed to save airport: {}", count, err.to_string());
