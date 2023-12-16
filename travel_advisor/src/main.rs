@@ -20,7 +20,12 @@ use log::{
 use actix_web::{
     App,
     HttpServer,
-    web::Data, dev::Service, HttpMessage, http::header::{HeaderName, HeaderValue},
+    dev::Service,
+    http::header::{
+        HeaderName,
+        HeaderValue,
+    },
+    web::Data,
 };
 
 use crate::{
@@ -112,25 +117,21 @@ async fn main() -> std::io::Result<()>{
             .app_data(city_service_data.clone())
             .app_data(comment_service_data.clone())
             .app_data(user_repo_data.clone())
-            /*.wrap_fn(|mut req, srv| {
-                req.extensions_mut().insert(1);
-                match req.headers().get("RequestId") {
-                    Some(_) => (),
-                    None => {
-                        let id = uuid::Uuid::new_v4().to_string();
-                        let id_header = HeaderValue::from_str(id.as_str()).unwrap();
-                        req.headers_mut().append(
-                            HeaderName::from_static("RequestId"),
-                            id_header,
-                        );
-                    },
-                }
+            .wrap_fn(|mut req, srv| {
+                if req.headers().contains_key("RequestId") {
+                    let id = uuid::Uuid::new_v4().to_string();
+                    let id_header = HeaderValue::from_str(id.as_str()).unwrap();
+                    req.headers_mut().append(
+                        HeaderName::from_static("RequestId"),
+                        id_header,
+                    );
+                };
                 let fut = srv.call(req);
                 async move {
                     let res = fut.await?;
                     Ok(res) 
                 }
-            })*/
+            })
             .configure(init_hello)
             .configure(init_city)
             .configure(init_user)
