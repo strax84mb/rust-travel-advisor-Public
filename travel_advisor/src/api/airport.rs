@@ -131,7 +131,7 @@ async fn delete_airpot(
     req: HttpRequest,
     id: web::Path<String>,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
-    auth_service: Data<Arc<dyn AuthService + Send + Sync>>
+    auth_service: Data<Arc<dyn AuthService + Send + Sync>>,
 ) -> impl Responder {
     match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
         Err(err) => return respond_unauthorized(Some(err.to_string())),

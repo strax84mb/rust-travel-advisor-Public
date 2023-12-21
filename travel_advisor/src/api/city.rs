@@ -10,6 +10,7 @@ use actix_web::{
     Responder,
     HttpRequest,
 };
+use test_annotations::roles;
 
 use crate::{
     AuthService,
@@ -74,18 +75,11 @@ async fn  get_city_by_id(
 }
 
 #[post("/v1/cities")]
+#[roles("admin")]
 async fn upload_cities(
-    req: HttpRequest,
     payload: web::Bytes,
-    auth_service: Data<Arc<dyn AuthService + Send + Sync>>,
     city_service: Data<Arc<dyn CityService + Send + Sync>>,
 ) -> impl Responder {
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Ok(found) if !found => return respond_unauthorized(None),
-        Err(err) => return resolve_error(err, Some("failed to check JWT")),
-        _ => (),
-    }
-
     match city_service.into_inner().save_cities(payload.to_vec().as_slice()) {
         Ok(()) => respond_ok(Some("saved all cities")),
         Err(err) => resolve_error(err, Some("failed to save all cities")),
