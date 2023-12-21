@@ -1,7 +1,4 @@
-use std::{
-    future::Future,
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use actix_web::{
     delete,
@@ -61,7 +58,7 @@ pub async fn get_comments_for_user(
         Err(err) => return respond_bad_request(err.to_string()),
     };
 
-    handle_comment_vec(comment_service.into_inner().list_for_user(id)).await
+    handle_comment_vec(comment_service.into_inner().list_for_user(id))
 }
 
 #[get("/v1/cities/{id}/comments")]
@@ -74,11 +71,11 @@ pub async fn get_comments_for_city(
         Ok(id) => id,
         Err(err) => return respond_bad_request(err.to_string()),
     };
-    handle_comment_vec(comment_service.into_inner().list_for_city(id)).await
+    handle_comment_vec(comment_service.into_inner().list_for_city(id))
 }
 
-async fn handle_comment_vec(promise: impl Future<Output = Result<Vec<Comment>, Error>>) -> HttpResponse {
-    let comments = match promise.await {
+fn handle_comment_vec(promise: Result<Vec<Comment>, Error>) -> HttpResponse {
+    let comments = match promise {
         Ok(comments) => comments,
         Err(err) => return resolve_error(err, Some("failed to load comments")),
     };
@@ -110,7 +107,7 @@ async fn save_comment(
     };
     comment.user_id = user.id.clone();
     // save comment
-    match comment_service.into_inner().create(user.id.clone(), comment).await {
+    match comment_service.into_inner().create(user.id.clone(), comment) {
         Ok(comment) => respond_created(Some(comment)),
         Err(err) => resolve_error(err, None), 
     }
@@ -136,7 +133,7 @@ async fn update_comment(
         Err(err) => return respond_bad_request(err.to_string()),
     };
     // load comment
-    let mut comment = match comment_service.get_by_id(comment_id).await {
+    let mut comment = match comment_service.get_by_id(comment_id) {
         Ok(comment) => match comment {
             Some(comment) => comment,
             None => return respond_not_found("comment not found"),
@@ -146,7 +143,7 @@ async fn update_comment(
     // extract payload
     comment.content = payload.0.content.clone();
     // update comment
-    match comment_service.update(user.id.clone(), comment).await {
+    match comment_service.update(user.id.clone(), comment) {
         Ok(comment) => respond_created(Some(comment)),
         Err(err) if err.type_message(Reason::Forbidden).is_some() => resolve_error(err, Some("only poster can update comment")),
         Err(err) => resolve_error(err, None),
@@ -171,7 +168,7 @@ async fn delete_comment(
         Err(_) => return respond_bad_request("invalid comment ID".to_string()),
     };
     // delete comment
-    match comment_service.into_inner().delete(comment_id, user).await {
+    match comment_service.into_inner().delete(comment_id, user) {
         Ok(()) => respond_ok(None::<i64>),
         Err(err) if err.type_message(Reason::Forbidden).is_some() => respond_forbidden(None),
         Err(err) => resolve_error(err, None),

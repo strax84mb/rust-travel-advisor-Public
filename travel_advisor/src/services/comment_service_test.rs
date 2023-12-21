@@ -3,16 +3,13 @@ mod airport_service_test {
 
     use std::{sync::Arc, time::SystemTime};
 
-    use async_trait::async_trait;
     use mockall::{
         mock,
         predicate::eq,
     };
 
     use crate::{
-        model::{
-            Comment,
-        },
+        model::Comment,
         util::app_errors::Error,
     };
 
@@ -26,15 +23,14 @@ mod airport_service_test {
 
         pub CommentRepositoryTest {}
 
-        #[async_trait]
         impl CommentRepository for CommentRepositoryTest {
-            async fn create(&self, comment: Comment) -> Result<Comment, Error>;
-            async fn get_by_city(&self, city_id: i64) -> Result<Vec<Comment>, Error>;
-            async fn get_by_user(&self, user_id: i64) -> Result<Vec<Comment>, Error>;
-            async fn update(&self, id: i64, text: String) -> Result<(), Error>;
-            async fn delete(&self, id: i64) -> Result<(), Error>;
-            async fn delete_for_city(&self, city_id: i64) -> Result<(), Error>;
-            async fn get_by_id(&self, id: i64) -> Result<Option<Comment>, Error>;
+            fn create(&self, comment: Comment) -> Result<Comment, Error>;
+            fn get_by_city(&self, city_id: i64) -> Result<Vec<Comment>, Error>;
+            fn get_by_user(&self, user_id: i64) -> Result<Vec<Comment>, Error>;
+            fn update(&self, id: i64, text: String) -> Result<(), Error>;
+            fn delete(&self, id: i64) -> Result<(), Error>;
+            fn delete_for_city(&self, city_id: i64) -> Result<(), Error>;
+            fn get_by_id(&self, id: i64) -> Result<Option<Comment>, Error>;
         }
 
     }
@@ -62,7 +58,7 @@ mod airport_service_test {
         let mock_param: Arc<dyn CommentRepository + Send + Sync> = Arc::new(mock);
         let service = new_comment_service(mock_param);
 
-        let comment = service.get_by_id(1).await;
+        let comment = service.get_by_id(1);
 
         assert_eq!(true, comment.is_ok());
         let comment = comment.unwrap();

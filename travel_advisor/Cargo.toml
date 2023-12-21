@@ -29,3 +29,4 @@ actix-rt = "2.8.0"
 test_annotations = { path = "../test_annotations" }
 uuid = { version = "1.6.1", features = ["v4"] }
 r2d2 = "0.8.10"
+chrono = "0.4.31"

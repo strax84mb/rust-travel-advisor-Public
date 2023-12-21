@@ -1,5 +1,4 @@
 use actix_web::http::header::ToStrError;
-use async_trait::async_trait;
 
 use crate::{
     util::app_errors::Error,
@@ -29,14 +28,13 @@ pub trait AirportService {
     fn save_airports(&self, sv_text: &[u8]) -> Result<(), Error>;
 }
 
-#[async_trait]
 pub trait CommentService {
-    async fn create(&self, user_id: i64, mut comment: Comment) -> Result<Comment, Error>;
-    async fn update(&self, user_id: i64, comment: Comment) -> Result<Comment, Error>;
-    async fn delete(&self, id: i64, user: User) -> Result<(), Error>;
-    async fn list_for_city(&self, city_id: i64) -> Result<Vec<Comment>, Error>;
-    async fn list_for_user(&self, user_id: i64) -> Result<Vec<Comment>, Error>;
-    async fn get_by_id(&self, id: i64) -> Result<Option<Comment>, Error>;
+    fn create(&self, user_id: i64, comment: Comment) -> Result<Comment, Error>;
+    fn update(&self, user_id: i64, comment: Comment) -> Result<Comment, Error>;
+    fn delete(&self, id: i64, user: User) -> Result<(), Error>;
+    fn list_for_city(&self, city_id: i64) -> Result<Vec<Comment>, Error>;
+    fn list_for_user(&self, user_id: i64) -> Result<Vec<Comment>, Error>;
+    fn get_by_id(&self, id: i64) -> Result<Option<Comment>, Error>;
 }
 
 pub trait AuthService {

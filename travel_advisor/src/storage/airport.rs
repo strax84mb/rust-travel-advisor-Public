@@ -79,7 +79,7 @@ pub mod airports {
                 };
                 match diesel::insert_into(air_sch::dsl::airports)
                     .values(&entity)
-                    .execute(conn){
+                    .execute(conn) {
                         Err(err) => Err(err),
                         Ok(_) => {
                             match air_sch::dsl::airports.select(last_insert_id()).load::<i64>(conn) {

@@ -1,3 +1,13 @@
+use std::{
+    time::{
+        SystemTime,
+        Duration,
+        UNIX_EPOCH,
+    },
+    ops::Add,
+};
+
+use chrono::NaiveDateTime;
 use diesel::{
     Queryable,
     Selectable,
@@ -9,6 +19,7 @@ use diesel::{
 use crate::model::{
     Airport,
     City,
+    Comment,
 };
 
 #[derive(Queryable, Selectable, Identifiable, Insertable, PartialEq)]
@@ -70,4 +81,50 @@ pub struct Route {
     pub start: i64,
     pub finish: i64,
     pub price: i64,
+}
+
+#[derive(Selectable, Queryable, Identifiable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::comments)]
+pub struct CommentDB {
+    pub id: i64,
+    pub user_id: i64,
+    pub city_id: i64,
+    pub text: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+}
+
+pub fn naive_to_system(value: NaiveDateTime) -> SystemTime {
+    UNIX_EPOCH.add(Duration::from_secs(value.timestamp() as u64))
+}
+
+pub fn system_to_naive(value: SystemTime) -> NaiveDateTime {
+    match value.duration_since(UNIX_EPOCH) {
+        Ok(dur) => match NaiveDateTime::from_timestamp_micros(dur.as_micros() as i64) {
+            Some(naive) => naive,
+            None => NaiveDateTime::UNIX_EPOCH,
+        },
+        Err(_) => NaiveDateTime::UNIX_EPOCH,
+    }
+}
+
+impl CommentDB {
+    pub fn to_model(&self) -> Comment {
+        Comment {
+            id: self.id.clone(),
+            user_id: self.user_id.clone(),
+            city_id: self.city_id.clone(),
+            content: self.text.clone(),
+            created_at: naive_to_system(self.created_at.clone()),
+            updated_at: naive_to_system(self.updated_at.clone()),
+        }
+    }
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::comments)]
+pub struct InsertCommentDB {
+    pub user_id: i64,
+    pub city_id: i64,
+    pub text: String,
 }
