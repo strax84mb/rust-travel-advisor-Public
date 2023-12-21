@@ -118,7 +118,7 @@ async fn main() -> std::io::Result<()>{
             .app_data(comment_service_data.clone())
             .app_data(user_repo_data.clone())
             .wrap_fn(|mut req, srv| {
-                if req.headers().contains_key("RequestId") {
+                if !req.headers().contains_key("RequestId") {
                     let id = uuid::Uuid::new_v4().to_string();
                     let id_header = HeaderValue::from_str(id.as_str()).unwrap();
                     req.headers_mut().append(
