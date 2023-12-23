@@ -35,8 +35,8 @@ mod airport_service_test {
 
     }
 
-    #[actix_rt::test]
-    async fn create_comment() {
+    #[test]
+    fn create_comment_get_comment() {
         let mut mock = MockCommentRepositoryTest::new();
 
         let now = SystemTime::now();
@@ -70,6 +70,28 @@ mod airport_service_test {
         assert_eq!(true, "content".to_string().eq(&comment.content));
         assert_eq!(true, now.eq(&comment.created_at));
         assert_eq!(true, now.eq(&comment.updated_at));
+    }
+
+    #[actix_rt::test]
+    async fn create_comment_get_not_found() {
+        let mut mock = MockCommentRepositoryTest::new();
+
+        mock.expect_get_by_id()
+            .with(eq(1 as i64))
+            .times(1)
+            .return_once(move |_id| {
+                Err(Error::not_found())
+            })
+        ;
+
+        let mock_param: Arc<dyn CommentRepository + Send + Sync> = Arc::new(mock);
+        let service = new_comment_service(mock_param);
+
+        let comment = service.get_by_id(1);
+
+        assert!(comment.is_err());
+        let err = comment.err().unwrap();
+        assert!(err.type_message(crate::util::app_errors::Reason::NotFound).is_some())
     }
 
 }

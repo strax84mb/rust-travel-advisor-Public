@@ -21,17 +21,22 @@ use super::{
 };
  
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(hello_world)
-        .service(take_test_for_a_ride)
-        .service(test_save_city);
+    cfg.service(
+        web::scope("/v1/hello")
+            .service(hello_world)
+            .service(
+                web::resource("/test-traits")
+                    .guard(actix_web::guard::Get())
+                    .to(take_test_for_a_ride)
+            ).service(test_save_city)
+    );
 }
 
-#[get("/v1/hello")]
+#[get("")]
 async fn hello_world() -> impl Responder {
     HttpResponse::Ok().body("World!")
 }
 
-#[get("/v1/hello/test-traits")]
 async fn take_test_for_a_ride(city_service: Data<Arc<dyn CityService + Send + Sync>>) -> impl Responder {
     match city_service.into_inner().get_all() {
         Ok(result) => {
@@ -46,7 +51,7 @@ async fn take_test_for_a_ride(city_service: Data<Arc<dyn CityService + Send + Sy
     }
 }
 
-#[post("/v1/hello/city/{name}")]
+#[post("/city/{name}")]
 async fn test_save_city(
     name: web::Path<String>,
     city_service: Data<Arc<dyn CityService + Send + Sync>>,

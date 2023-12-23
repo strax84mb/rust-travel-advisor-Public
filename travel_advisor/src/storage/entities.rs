@@ -98,16 +98,6 @@ pub fn naive_to_system(value: NaiveDateTime) -> SystemTime {
     UNIX_EPOCH.add(Duration::from_secs(value.timestamp() as u64))
 }
 
-pub fn system_to_naive(value: SystemTime) -> NaiveDateTime {
-    match value.duration_since(UNIX_EPOCH) {
-        Ok(dur) => match NaiveDateTime::from_timestamp_micros(dur.as_micros() as i64) {
-            Some(naive) => naive,
-            None => NaiveDateTime::UNIX_EPOCH,
-        },
-        Err(_) => NaiveDateTime::UNIX_EPOCH,
-    }
-}
-
 impl CommentDB {
     pub fn to_model(&self) -> Comment {
         Comment {

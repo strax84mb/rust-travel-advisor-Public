@@ -118,13 +118,12 @@ async fn main() -> std::io::Result<()>{
             .app_data(comment_service_data.clone())
             .app_data(user_repo_data.clone())
             .wrap_fn(|mut req, srv| {
-                if !req.headers().contains_key("RequestId") {
+                let found = req.headers().contains_key("request-id");
+                if !found {
                     let id = uuid::Uuid::new_v4().to_string();
                     let id_header = HeaderValue::from_str(id.as_str()).unwrap();
-                    req.headers_mut().append(
-                        HeaderName::from_static("RequestId"),
-                        id_header,
-                    );
+                    let headers = req.headers_mut();
+                    headers.append(HeaderName::from_static("request-id"), id_header);
                 };
                 let fut = srv.call(req);
                 async move {
