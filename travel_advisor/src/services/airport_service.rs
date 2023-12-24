@@ -5,7 +5,13 @@ pub mod services {
 
     use crate::{
         model::Airport,
-        util::app_errors::Error,
+        util::{
+            Error,
+            ErrorCode::{
+                EntityNotFound,
+                TextRowParse,
+            },
+        },
         services::traits::AirportService,
         storage::{
             AirportRepository,
@@ -58,7 +64,7 @@ pub mod services {
                     Ok(r) => r,
                     Err(err) => {
                         error!("only pocessed {}: malformed CSV: {}", count, err.to_string());
-                        return Err(Error::underlying(format!("only pocessed {}: malformed CSV: {}", count, err.to_string())));
+                        return Err(Error::internal(TextRowParse, format!("only pocessed {}: malformed CSV: {}", count, err.to_string())));
                     },
                 };
                 let city_name = record[0].to_string();
@@ -67,12 +73,12 @@ pub mod services {
                         Some(city) => city,
                         None => {
                             error!("only pocessed {}: city {} not found", count, city_name);
-                            return Err(Error::underlying(format!("only pocessed {}: city {} not found", count, city_name)));
+                            return Err(Error::internal(EntityNotFound, format!("only pocessed {}: city {} not found", count, city_name)));
                         },
                     },
                     Err(err) => {
                         error!("only pocessed {}: failed to load city {}: {}", count, city_name, err.to_string());
-                        return Err(Error::underlying(format!("only pocessed {}: failed to load city {}: {}", count, city_name, err.to_string())));
+                        return Err(err.wrap(format!("only pocessed {}: failed to load city {}", count, city_name)));
                     },
                 };
                 let airport = Airport {
@@ -84,7 +90,7 @@ pub mod services {
                     Ok(_) => count += 1,
                     Err(err) => {
                         error!("only pocessed {}: failed to save airport: {}", count, err.to_string());
-                        return Err(Error::underlying(format!("only pocessed {}: failed to save airport: {}", count, err.to_string())));
+                        return Err(err.wrap(format!("only pocessed {}: failed to save airport", count)));
                     },
                 }
             }

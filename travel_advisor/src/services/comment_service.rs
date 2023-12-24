@@ -9,7 +9,7 @@ pub mod services {
             Comment,
             User,
         },
-        util::app_errors::Error,
+        util::Error,
     };
     use super::super::traits::CommentService;
 
@@ -32,21 +32,21 @@ pub mod services {
                 Ok(comment) => Ok(comment),
                 Err(err) => {
                     error!("failed to save comment: {}", err.to_string());
-                    Err(Error::wrap_str(err, "failed to save comment"))
+                    Err(err.wrap_str("failed to save comment"))
                 }
             }
         }
 
         fn update(&self, user_id: i64, comment: Comment) -> Result<Comment, Error> {
             if user_id.clone() != comment.user_id.clone() {
-                return Err(Error::forbidden())
+                return Err(Error::forbidden_str("only poster can change comment"))
             }
             // update comment
             match self.repo.update(comment.id.clone(), comment.content.clone()) {
                 Ok(()) => (),
                 Err(err) => {
                     error!("failed to update comment: {}", err.to_string());
-                    return Err(Error::wrap_str(err, "failed to update comment"));
+                    return Err(err.wrap_str("failed to update comment"));
                 },
             }
             // reload comment
@@ -57,7 +57,7 @@ pub mod services {
                 },
                 Err(err) => {
                     error!("failed to reload comment: {}", err.to_string());
-                    Err(Error::wrap_str(err, "failed to reload comment"))
+                    Err(err.wrap_str("failed to reload comment"))
                 },
             }
         }
@@ -67,23 +67,23 @@ pub mod services {
             let comment = match self.repo.get_by_id(id) {
                 Ok(comment) => match comment {
                     Some(comment) => comment,
-                    None => return Err(Error::not_found()),
+                    None => return Err(Error::not_found("comment not found".to_string())),
                 },
                 Err(err) => {
                     error!("failed to load comment: {}", err.to_string());
-                    return Err(Error::wrap_str(err, "failed to load comment"));
+                    return Err(err.wrap_str("failed to load comment"));
                 },
             };
 
             if !allowed && comment.user_id.clone() != user.id.clone() {
-                return Err(Error::forbidden())
+                return Err(Error::forbidden_str("only poster or admin can delete comment"))
             }
 
             match self.repo.delete(id) {
                 Ok(()) => Ok(()),
                 Err(err) => {
                     error!("failed to delete comment: {}", err.to_string());
-                    Err(Error::wrap_str(err, "failed to delete comment"))
+                    Err(err.wrap_str("failed to delete comment"))
                 },
             }
         }

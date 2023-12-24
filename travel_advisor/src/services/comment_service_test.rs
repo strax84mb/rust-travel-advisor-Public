@@ -10,7 +10,7 @@ mod airport_service_test {
 
     use crate::{
         model::Comment,
-        util::app_errors::Error,
+        util::Error,
     };
 
     use crate::storage::CommentRepository;
@@ -80,7 +80,7 @@ mod airport_service_test {
             .with(eq(1 as i64))
             .times(1)
             .return_once(move |_id| {
-                Err(Error::not_found())
+                Err(Error::not_found("comment not found".to_string()))
             })
         ;
 
@@ -91,7 +91,7 @@ mod airport_service_test {
 
         assert!(comment.is_err());
         let err = comment.err().unwrap();
-        assert!(err.type_message(crate::util::app_errors::Reason::NotFound).is_some())
+        assert!(matches!(err, Error::NotFound(_)));
     }
 
 }

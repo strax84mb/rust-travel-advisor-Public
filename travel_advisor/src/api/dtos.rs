@@ -81,6 +81,8 @@ impl AirportDto {
 pub struct CommentDto {
     pub id: i64,
     pub user_id: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<String>,
     pub city_id: i64,
     pub content: String,
     pub created_at: SystemTime,
@@ -92,6 +94,7 @@ impl CommentDto {
         CommentDto {
             id: c.id.clone(),
             user_id: c.user_id.clone(),
+            user_name: None,
             city_id: c.city_id.clone(),
             content: c.content.clone(),
             created_at: c.created_at.clone(),

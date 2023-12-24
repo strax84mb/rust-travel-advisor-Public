@@ -96,7 +96,7 @@ async fn main() -> std::io::Result<()>{
     let key = fs::read(config.key_path()).unwrap();
     let key = String::from_utf8(key).unwrap();
 
-    let auth_service = new_auth_service(key, user_repo.clone());
+    let auth_service = new_auth_service(key, user_repo.clone()).expect("could not instantiate auth service");
     let auth_service_data: Data<Arc<dyn AuthService + Send + Sync>> = Data::new(auth_service);
 
     let airport_service = new_airport_service(city_repo.clone(), airport_repo.clone());

@@ -6,23 +6,16 @@ use actix_web::{
         self,
         Data,
     },
-    Responder,
 };
 
 use crate::{
     AuthService,
     UserRepository,
+    util::Error,
 };
-use super::{
-    dtos::{
-        LoginRequest,
-        LoginResponse,
-    }, 
-    responses::{
-        respond_not_found,
-        resolve_error,
-        respond_ok,
-    }
+use super::dtos::{
+    LoginRequest,
+    LoginResponse,
 };
 
 pub fn init(cfg: &mut web::ServiceConfig) {
@@ -34,19 +27,19 @@ async fn login(
     payload: web::Json<LoginRequest>,
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>,
     user_repo: Data<Arc<dyn UserRepository + Send + Sync>>,
-) -> impl Responder {
+) -> Result<web::Json<LoginResponse>, Error> {
     let request = payload.into_inner();
     let user = match user_repo.into_inner().get_by_email_and_pass(request.email, request.pass) {
         Ok(user) => match user {
             Some(user) => user,
-            None => return respond_not_found("incorrect email or password"),
+            None => return Err(Error::not_found("incorrect email or password".to_string())),
         },
-        Err(err) => return resolve_error(err, Some("failed to load user")),
+        Err(err) => return Err(err.wrap_str("failed to load user")),
     };
     
     let user_data = match auth_service.create_jwt(user) {
         Ok(data) => data,
-        Err(err) => return resolve_error(err, Some("failed to generate JWT")),
+        Err(err) => return Err(err.wrap_str("failed to generate JWT")),
     };
 
     let response = LoginResponse {
@@ -54,5 +47,5 @@ async fn login(
         token: user_data.jwt,
     };
 
-    respond_ok(Some(response))
+    Ok(web::Json(response))
 }

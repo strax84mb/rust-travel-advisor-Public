@@ -15,7 +15,20 @@ pub mod comments {
     use crate::{
         model::Comment,
         schema::comments::dsl as comm_dsl,
-        util::app_errors::Error, storage::{Database, db_context::db_macros::get_connection, entities::InsertCommentDB},
+        util::{
+            Error,
+            ErrorCode::{
+                DbRead,
+                DbSave,
+                DbDelete,
+                GetDbConnection,
+            },
+        },
+        storage::{
+            Database,
+            db_context::db_macros::get_connection_v2,
+            entities::InsertCommentDB,
+        },
     };
     use super::super::entities::CommentDB;
 
@@ -44,7 +57,7 @@ pub mod comments {
     impl CommentRepository for CommentRepositoryImpl {
 
         fn create(&self, comment: Comment) -> Result<Comment, Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             let trx_result = conn.transaction::<i64, diesel::result::Error, _>(|conn| {
                 let entity = InsertCommentDB {
                     text: comment.content.clone(),
@@ -71,67 +84,67 @@ pub mod comments {
                     created_at: SystemTime::now(),
                     updated_at: SystemTime::now(),
                 }),
-                Err(err) => Err(Error::underlying(err.to_string())),
+                Err(err) => Err(Error::internal(DbSave, err.to_string())),
             }
         }
     
         fn get_by_city(&self, city_id: i64) -> Result<Vec<Comment>, Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             match comm_dsl::comments
                 .filter(comm_dsl::city_id.eq(city_id))
                 .select(CommentDB::as_select())
                 .load(conn) {
                     Ok(result) => Ok(result.iter().map(|c| c.to_model()).collect()),
-                    Err(err) => Err(Error::underlying(err.to_string())),
+                    Err(err) => Err(Error::internal(DbRead, err.to_string())),
                 }
         }
         
         fn get_by_user(&self, user_id: i64) -> Result<Vec<Comment>, Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             match comm_dsl::comments
                 .filter(comm_dsl::user_id.eq(user_id))
                 .select(CommentDB::as_select())
                 .load(conn) {
                     Ok(result) => Ok(result.iter().map(|c| c.to_model()).collect()),
-                    Err(err) => Err(Error::underlying(err.to_string())),
+                    Err(err) => Err(Error::internal(DbRead, err.to_string())),
                 }
         }
     
         fn update(&self, id: i64, text: String) -> Result<(), Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             match update(comm_dsl::comments)
                 .filter(comm_dsl::id.eq(id))
                 .set(comm_dsl::text.eq(text))
                 .execute(conn) {
-                    Err(err) => Err(Error::underlying(err.to_string())),
+                    Err(err) => Err(Error::internal(DbSave, err.to_string())),
                     Ok(result) if result > 0 => Ok(()),
-                    _ => Err(Error::not_found()),
+                    _ => Err(Error::not_found("comment not found".to_string())),
                 }
         }
     
         fn delete(&self, id: i64) -> Result<(), Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             match delete(comm_dsl::comments)
                 .filter(comm_dsl::id.eq(id))
                 .execute(conn) {
-                    Err(err) => Err(Error::underlying(err.to_string())),
+                    Err(err) => Err(Error::internal(DbDelete, err.to_string())),
                     Ok(result) if result > 0 => Ok(()),
-                    _ => Err(Error::not_found()),
+                    _ => Err(Error::not_found("comment not found".to_string())),
                 }
         }
         
         fn delete_for_city(&self, city_id: i64) -> Result<(), Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             match delete(comm_dsl::comments)
                 .filter(comm_dsl::city_id.eq(city_id))
                 .execute(conn) {
-                    Err(err) => Err(Error::underlying(err.to_string())),
+                    Err(err) => Err(Error::internal(DbDelete, err.to_string())),
                     Ok(_result) => Ok(()),
                 }
         }
     
         fn get_by_id(&self, id: i64) -> Result<Option<Comment>, Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             match comm_dsl::comments
                 .find(id)
                 .select(CommentDB::as_select())
@@ -141,7 +154,7 @@ pub mod comments {
                         Some(rezz) => Ok(Some(rezz.to_model())),
                         None => Ok(None),
                     },
-                    Err(err) => Err(Error::underlying(err.to_string())),
+                    Err(err) => Err(Error::internal(DbRead, err.to_string())),
                 }
         }
                 

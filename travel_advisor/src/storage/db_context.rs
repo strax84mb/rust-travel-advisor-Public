@@ -33,14 +33,14 @@ impl Database {
 #[macro_use]
 pub mod db_macros {
 
-    macro_rules! get_connection {
+    macro_rules! get_connection_v2 {
         ($payload:expr) => {
             match $payload.conns.to_owned().get() {
                 Ok(connection) => connection,
-                Err(err) => return Err(Error::underlying(err.to_string())),
+                Err(err) => return Err(Error::internal(GetDbConnection, err.to_string())),
             }
         };
     }
 
-    pub(crate) use get_connection;
+    pub(crate) use get_connection_v2;
 }

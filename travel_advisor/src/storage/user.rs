@@ -5,14 +5,20 @@ pub mod users {
 
     use crate::{
         Database,
-        util::app_errors::Error,
+        util::{
+            Error,
+            ErrorCode::{
+                DbRead,
+                GetDbConnection,
+            },
+        },
         model::{
             User,
             UserDB,
         },
         schema::users::dsl as user_dsl,
     };
-    use super::super::db_context::db_macros::get_connection;
+    use super::super::db_context::db_macros::get_connection_v2;
 
     pub trait UserRepository {
         fn get_by_id(&self, id: i64) -> Result<Option<User>, Error>;
@@ -33,7 +39,7 @@ pub mod users {
     impl UserRepository for UserRepositoryImpl {
     
         fn get_by_id(&self, id: i64) -> Result<Option<User>, Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             match user_dsl::users
                 .find(id)
                 .select(UserDB::as_select())
@@ -43,12 +49,12 @@ pub mod users {
                         Some(user) => Ok(Some(User::from_db(&user))),
                         None => Ok(None),
                     },
-                    Err(err) => Err(Error::underlying(err.to_string())),
+                    Err(err) => Err(Error::internal(DbRead, err.to_string())),
                 }
         }
     
         fn get_by_username(&self, name: String) -> Result<Option<User>, Error> {
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             match user_dsl::users
                 .filter(user_dsl::email.eq(name))
                 .select(UserDB::as_select())
@@ -58,7 +64,7 @@ pub mod users {
                         Some(user) => Ok(Some(User::from_db(&user))),
                         None => Ok(None),
                     },
-                    Err(err) => Err(Error::underlying(err.to_string())),
+                    Err(err) => Err(Error::internal(DbRead, err.to_string())),
                 }
         }
 
@@ -81,7 +87,7 @@ pub mod users {
             let pass: String = chars.iter().collect();
             let pass = pass.to_lowercase();
             // load user
-            let conn = &mut get_connection!(self.db);
+            let conn = &mut get_connection_v2!(self.db);
             let result = user_dsl::users
                 .filter(user_dsl::email.eq(email))
                 .filter(user_dsl::pass.eq(pass))
@@ -93,7 +99,7 @@ pub mod users {
                     Some(user) => Ok(Some(User::from_db(&user))),
                     None => Ok(None),
                 },
-                Err(err) => Err(Error::underlying(err.to_string())),
+                Err(err) => Err(Error::internal(DbRead, err.to_string())),
             }
         }
             

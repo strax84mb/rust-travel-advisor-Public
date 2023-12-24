@@ -10,26 +10,22 @@ use actix_web::{
         Data,
     },
     HttpRequest,
+    HttpResponse,
     Responder,
 };
 
-use crate::services::traits::{
-    AirportService,
-    AuthService,
+use crate::{
+    services::traits::{
+        AirportService,
+        AuthService,
+    },
+    util::Error,
 };
 use super::{
     dtos::AirportDto,
     validations::{
         extract_auth,
         string_to_id,
-    },
-    responses::{
-        resolve_error,
-        respond_ok,
-        respond_created,
-        respond_not_found,
-        respond_bad_request,
-        respond_unauthorized,
     },
 };
 
@@ -43,37 +39,37 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 }
 
 #[get("/v1/airports")]
-async fn get_airports(airport_service: Data<Arc<dyn AirportService + Send + Sync>>) -> impl Responder {
+async fn get_airports(
+    airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
+) -> Result<web::Json<Vec<AirportDto>>, Error> {
     // load airports
     let result = match airport_service.into_inner().get_all() {
         Ok(loaded) => loaded,
-        Err(err) => return resolve_error(err, None),
+        Err(err) => return Err(err),
     };
     // convert to DTO
     let result: Vec<AirportDto> = result.iter().map(|a| AirportDto::from_model(a)).collect();
-    respond_ok(Some(result))
+    Ok(web::Json(result))
 }
 
 #[get("/v1/airports/{id}")]
 async fn get_airport_by_id(
     id: web::Path<String>,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
-) -> impl Responder {
+) -> Result<web::Json<AirportDto>, Error> {
     // check param
     let id = match string_to_id(id.to_string()) {
         Ok(id) => id,
-        Err(err) => return respond_bad_request(format!("invalid ID: {}", err.to_string())),
+        Err(err) => return Err(Error::bad_request(format!("invalid ID: {}", err.to_string()))),
     };
     // load airport
-    let result = match airport_service.into_inner().get_by_id(id) {
+    match airport_service.into_inner().get_by_id(id) {
         Ok(airport) => match airport {
-            Some(airport) => AirportDto::from_model(&airport),
-            None => return respond_not_found("airport not found"),
+            Some(airport) => Ok(web::Json(AirportDto::from_model(&airport))),
+            None => Err(Error::not_found("airport not found".to_string())),
         },
-        Err(err) => return resolve_error(err, None),
-    };
-    // serialize
-    respond_ok(Some(result))
+        Err(err) => Err(err),
+    }
 }
 
 #[post("/v1/airports")]
@@ -82,22 +78,23 @@ async fn create_airpot(
     payload: web::Bytes,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
-) -> impl Responder {
+) -> Result<web::Json<AirportDto>, Error> {
     // validate access right
     match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Err(err) => return respond_unauthorized(Some(err.to_string())),
+        Err(err) => return Err(err),
+        Ok(has_rights) if !has_rights => return Err(Error::unauthorized_str("user has no rights for this operation")),
         _ => (),
     };
     // deserialize
     let dto: AirportDto = match serde_json::from_slice(payload.to_vec().as_slice()) {
         Ok(v) => v,
-        Err(err) => return respond_bad_request(format!("incorrect payload: {}", err.to_string())),
+        Err(err) => return Err(Error::bad_request(format!("incorrect payload: {}", err.to_string()))),
     };
     let airport = dto.to_model();
     // save new airport
     match airport_service.into_inner().create(airport) {
-        Ok(final_airport) => respond_ok(Some(final_airport)),
-        Err(err) => resolve_error(err, None),
+        Ok(final_airport) => Ok(web::Json(AirportDto::from_model(&final_airport))),
+        Err(err) => Err(err),
     }
 }
 
@@ -107,22 +104,23 @@ async fn update_airpot(
     payload: web::Bytes,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
-) -> impl Responder {
+) -> Result<impl Responder, Error> {
     // validate access right
     match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Err(err) => return respond_unauthorized(Some(err.to_string())),
+        Err(err) => return Err(err),
+        Ok(has_rights) if !has_rights => return Err(Error::unauthorized_str("user has no rights for this operation")),
         _ => (),
     };
     // deserialize
     let dto: AirportDto = match serde_json::from_slice(payload.to_vec().as_slice()) {
         Ok(v) => v,
-        Err(err) => return respond_bad_request(format!("incorrect payload: {}", err.to_string())),
+        Err(err) => return Err(Error::bad_request(format!("incorrect payload: {}", err.to_string()))),
     };
     let airport = dto.to_model();
     // save new airport
     match airport_service.into_inner().update(airport) {
-        Ok(()) => respond_created(None::<i8>),
-        Err(err) => resolve_error(err, None),
+        Ok(()) => Ok(HttpResponse::Created().finish()),
+        Err(err) => Err(err),
     }
 }
 
@@ -132,20 +130,21 @@ async fn delete_airpot(
     id: web::Path<String>,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>,
-) -> impl Responder {
+) -> Result<impl Responder, Error> {
     match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Err(err) => return respond_unauthorized(Some(err.to_string())),
+        Err(err) => return Err(err),
+        Ok(has_rights) if !has_rights => return Err(Error::unauthorized_str("user has no rights for this operation")),
         _ => (),
     };
     // check param
     let id = match string_to_id(id.to_string()) {
         Ok(id) => id,
-        Err(err) => return respond_bad_request(err.to_string()),
+        Err(err) => return Err(Error::bad_request(err.to_string())),
     };
     // delete airport
     match airport_service.into_inner().delete(id) {
-        Ok(()) => respond_ok(None::<i8>),
-        Err(err) => resolve_error(err, None),
+        Ok(()) => Ok(HttpResponse::Ok().finish()),
+        Err(err) => Err(err),
     }
 }
 
@@ -155,15 +154,16 @@ async fn upload_airpots(
     payload: web::Bytes,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
-) -> impl Responder {
+) -> Result<impl Responder, Error> {
     // validate access right
     match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Err(err) => return respond_unauthorized(Some(err.to_string())),
+        Err(err) => return Err(err),
+        Ok(has_rights) if !has_rights => return Err(Error::unauthorized_str("user has no rights for this operation")),
         _ => (),
     };
     // save airports
     match airport_service.into_inner().save_airports(payload.to_vec().as_slice()) {
-        Ok(()) => respond_ok(None::<i8>),
-        Err(err) => resolve_error(err, Some("failed to save all airports")),
+        Ok(()) => Ok(HttpResponse::Ok().finish()),
+        Err(err) => Err(err.wrap_str("failed to save all airports")),
     }
 }

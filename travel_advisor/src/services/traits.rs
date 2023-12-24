@@ -1,7 +1,7 @@
 use actix_web::http::header::ToStrError;
 
 use crate::{
-    util::app_errors::Error,
+    util::Error,
     model::{
         Airport,
         City,

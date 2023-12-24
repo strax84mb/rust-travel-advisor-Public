@@ -5,21 +5,15 @@ use actix_web::{
     post,
     HttpResponse,
     Responder,
-    web::{
-        self,
-        Data,
-    },
+    web,
 };
 use serde::Serialize;
 
-use crate::services::traits::CityService;
-use super::{
-    dtos::CityDto,
-    responses::{
-        respond_ok,
-        resolve_error,
-    },
+use crate::{
+    services::traits::CityService,
+    util::Error,
 };
+use super::dtos::CityDto;
  
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -39,16 +33,18 @@ async fn hello_world() -> impl Responder {
     HttpResponse::Ok().body("World!")
 }
 
-async fn take_test_for_a_ride(city_service: Data<Arc<dyn CityService + Send + Sync>>) -> impl Responder {
+async fn take_test_for_a_ride(
+    city_service: web::Data<Arc<dyn CityService + Send + Sync>>,
+) -> Result<web::Json<Vec<CityDto>>, Error> {
     match city_service.into_inner().get_all() {
         Ok(result) => {
             println!(">>> count: {}", result.len());
             let dtos: Vec<CityDto> = result.iter().map(|c| CityDto::from_model(c)).collect();
-            respond_ok(Some(dtos))
+            Ok(web::Json(dtos))
         },
         Err(err) => {
             println!(">>> error: {}", err.to_string());
-            resolve_error(err, Some("failed it, ouchy!!!"))
+            Err(err)
         },
     }
 }
@@ -56,11 +52,11 @@ async fn take_test_for_a_ride(city_service: Data<Arc<dyn CityService + Send + Sy
 #[post("/city/{name}")]
 async fn test_save_city(
     name: web::Path<String>,
-    city_service: Data<Arc<dyn CityService + Send + Sync>>,
-) -> impl Responder {
+    city_service: web::Data<Arc<dyn CityService + Send + Sync>>,
+) -> Result<web::Json<CityDto>, Error> {
     match city_service.new(name.to_string()) {
-        Ok(city) => respond_ok(Some(CityDto::from_model(&city))),
-        Err(err) => resolve_error(err, Some("failed to save city"))
+        Ok(city) => Ok(web::Json(CityDto::from_model(&city))),
+        Err(err) => Err(err),
     }
 }
 

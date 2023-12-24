@@ -9,7 +9,7 @@ pub mod services {
         CityRepository,
         model::City,
         services::traits::CityService,
-        util::app_errors::Error,
+        util::Error,
     };
 
     pub struct CityServiceImpl {
@@ -41,14 +41,15 @@ pub mod services {
                 },
                 Err(err) => {
                     error!("failed to load city: {}", err.to_string());
-                    return Err(Error::wrap_str(err, "failed to load city"));
+                    return Err(err.wrap_str("failed to load city"));
                 },
             };
             city.airports = match self.airport_repo.get_by_city_id(id) {
                 Ok(a) => a,
                 Err(err) => {
                     error!("failed to load airports: {}", err.to_string());
-                    return Err(Error::wrap_str(err, "failed to load airports"));
+                    // TODO return Err(Error::wrap_str("failed to load airports", err));
+                    return Err(Error::internal(crate::util::ErrorCode::DbRead, err.to_string()));
                 },
             };
 
@@ -68,7 +69,10 @@ pub mod services {
                     Ok(r) => r,
                     Err(err) => {
                         error!("only pocessed {}: malformed CSV: {}", count, err.to_string());
-                        return Err(Error::underlying(format!("only pocessed {}: malformed CSV: {}", count, err.to_string())));
+                        return Err(Error::internal(
+                            crate::util::ErrorCode::TextRowParse,
+                            format!("only pocessed {}: malformed CSV: {}", count, err.to_string())
+                        ));
                     },
                 };
         
@@ -76,7 +80,7 @@ pub mod services {
                 match self.city_repo.new(name.clone()) {
                     Err(err) => {
                         error!("only pocessed {}: failed to save city: {}", count, err.to_string());
-                        return Err(Error::wrap(err, format!("only pocessed {}: failed to save city", count)));
+                        return Err(err.wrap(format!("only pocessed {}: failed to save city", count)));
                     },
                     _ => (),
                 };

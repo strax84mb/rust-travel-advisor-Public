@@ -56,8 +56,8 @@ pub fn roles(attr: TokenStream, item: TokenStream) -> TokenStream {
     let (second, third) = other.split_at(other.find('{').expect("failed to get split string the second time") + 1);
     let validation_code = format!(
         "match {}.has_role(extract_auth(&{}), vec![{}]) {{
-            Ok(found) if !found => return respond_unauthorized(None),
-            Err(err) => return resolve_error(err, Some(\"failed to check JWT\")),
+            Ok(found) if !found => return Ok(respond_unauthorized(None)),
+            Err(err) => return Ok(resolve_error(err, Some(\"failed to check JWT\"))),
         _   => (),
         }};",
         match auth_service_param.clone() {
@@ -74,11 +74,11 @@ pub fn roles(attr: TokenStream, item: TokenStream) -> TokenStream {
         "{}{}{}{}{}{}",
         first,
         match req_param {
-            None => "req: HttpRequest,",
+            None => "req: actix_web::HttpRequest,",
             _ => "",
         },
         match auth_service_param {
-            None => "auth_service: Data<Arc<dyn AuthService + Send + Sync>>,",
+            None => "auth_service: actix_web::web::Data<Arc<dyn AuthService + Send + Sync>>,",
             _ => "",
         },
         second,
