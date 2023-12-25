@@ -110,9 +110,9 @@ mod airport_service_test {
     fn test_my_code() {
         let m: Meters = 3;
         let f: Feet = 3;
-        //assert_eq!(m, f);
-        let mut req = actix_web::test::TestRequest::default();
-        let mut sr = req.to_srv_request();
+        assert_eq!(m, f);
+        let req = actix_web::test::TestRequest::default();
+        let sr = req.to_srv_request();
         let mut ex = sr.extensions_mut();
         ex.insert(MeterWrap { m: 3 });
         ex.insert(FeetWrap { f: 2 });

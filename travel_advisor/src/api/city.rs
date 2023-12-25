@@ -8,7 +8,8 @@ use actix_web::{
         Data,
     },
     Responder,
-    HttpResponse, HttpRequest,
+    HttpRequest,
+    HttpResponse,
 };
 
 use crate::{
