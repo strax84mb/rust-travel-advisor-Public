@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, borrow::Borrow};
 
 use actix_web::{
     get,
@@ -8,7 +8,10 @@ use actix_web::{
     Responder,
     web, http::header::HeaderName,
 };
-use serde::Serialize;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use crate::{
     services::traits::CityService,
@@ -27,6 +30,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             ).service(test_save_city)
             .service(hello_with_json_payloads)
             .service(number_parse)
+            .service(query_param)
     );
 }
 
@@ -157,4 +161,31 @@ async fn number_parse(
     Ok(web::Json(NumberParseResponse {
         num: q,
     }))
+}
+
+#[derive(Deserialize)]
+struct QueryParam {
+    num: Option<i32>,
+    text: Option<String>,
+}
+
+#[get("/query-param")]
+async fn query_param(
+    par: web::Query<QueryParam>
+) -> Result<web::Json<()>, Error> {
+    log::info!(
+        ">>> num >>> {}",
+        match par.num {
+            Some(num) => num.to_string(),
+            None => "None".to_string(),
+        }
+    );
+    log::info!(
+        ">>> text >>> {}",
+        match par.text.borrow() {
+            Some(text) => text.to_string(),
+            None => "None".to_string(),
+        }
+    );
+    Ok(web::Json(()))
 }

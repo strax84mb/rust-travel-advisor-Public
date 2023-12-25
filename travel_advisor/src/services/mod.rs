@@ -3,6 +3,7 @@ mod airport_service;
 mod city_service;
 mod comment_service;
 pub mod traits;
+mod macros;
 
 pub type UserData = auth::services::UserData;
 

@@ -15,9 +15,11 @@ pub mod services {
         services::traits::AirportService,
         storage::{
             AirportRepository,
-            CityRepository,
+    //        CityRepository,
         },
     };
+    use crate::CityRepository;
+    use super::super::macros::log_if_error;
 
     pub fn new_airport_service(
         city_repo: Arc<dyn CityRepository + Sync + Send>,
@@ -37,23 +39,23 @@ pub mod services {
     impl AirportService for AirportServiceImpl {
 
         fn get_all(&self) -> Result<Vec<Airport>, Error> {
-            self.airport_repo.get_all()
+            log_if_error!(self.airport_repo.get_all())
         }
 
         fn get_by_id(&self, id: i64) -> Result<Option<Airport>, Error> {
-            self.airport_repo.get_by_id(id)
+            log_if_error!(self.airport_repo.get_by_id(id))
         }
 
         fn create(&self, airport: Airport) -> Result<Airport, Error> {
-            self.airport_repo.new(&airport)
+            log_if_error!(self.airport_repo.new(&airport))
         }
 
         fn update(&self, airport: Airport) -> Result<(), Error> {
-            self.airport_repo.update(airport)
+            log_if_error!(self.airport_repo.update(airport))
         }
 
         fn delete(&self, id: i64) -> Result<(), Error> {
-            self.airport_repo.delete(id)
+            log_if_error!(self.airport_repo.delete(id))
         }
 
         fn save_airports(&self, sv_text: &[u8]) -> Result<(), Error> {

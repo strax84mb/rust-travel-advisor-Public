@@ -2,7 +2,7 @@ mod config;
 pub mod api;
 pub mod model;
 pub mod services;
-pub mod storage;
+mod storage;
 pub mod util;
 mod playground;
 pub mod schema;

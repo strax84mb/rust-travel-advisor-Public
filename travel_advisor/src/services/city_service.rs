@@ -48,7 +48,6 @@ pub mod services {
                 Ok(a) => a,
                 Err(err) => {
                     error!("failed to load airports: {}", err.to_string());
-                    // TODO return Err(Error::wrap_str("failed to load airports", err));
                     return Err(Error::internal(crate::util::ErrorCode::DbRead, err.to_string()));
                 },
             };
