@@ -78,7 +78,7 @@ pub mod services {
             let mut jwt = match header {
                 Some(value) => match value {
                     Ok(s) => s,
-                    Err(err) => return Err(Error::internal_str(
+                    Err(_err) => return Err(Error::internal_str(
                         ErrorCode::NoAuthorizationHeader,
                         "Authorization header is not a string",
                     )),
@@ -176,7 +176,7 @@ pub mod services {
             Ok(user)
         }
 
-        fn has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<bool, Error> {
+        fn get_user_if_has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<Option<User>, Error> {
             let roles: Vec<String> = roles.iter().map(|&s| s.to_string()).collect();
             let user = match self.get_user(header) {
                 Ok(user) => user,
@@ -186,7 +186,11 @@ pub mod services {
                 },
             };
 
-            Ok(roles.iter().any(|r| user.roles.contains(r)))
+            match roles.iter().any(|r| user.roles.contains(r)) {
+                true => Ok(Some(user)),
+                false => Ok(None),
+            }
         }
-    }
+
+   }
 }

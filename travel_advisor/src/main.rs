@@ -6,6 +6,7 @@ pub mod storage;
 pub mod util;
 mod playground;
 pub mod schema;
+mod middleware;
 
 use std::{
     fs,
@@ -20,11 +21,6 @@ use log::{
 use actix_web::{
     App,
     HttpServer,
-    dev::Service,
-    http::header::{
-        HeaderName,
-        HeaderValue,
-    },
     web::Data,
 };
 
@@ -37,6 +33,7 @@ use crate::{
         init_comments,
     },
     config::Config,
+    middleware::RequestId,
     services::{
         new_airport_service,
         new_auth_service,
@@ -97,7 +94,7 @@ async fn main() -> std::io::Result<()>{
     let key = String::from_utf8(key).unwrap();
 
     let auth_service = new_auth_service(key, user_repo.clone()).expect("could not instantiate auth service");
-    let auth_service_data: Data<Arc<dyn AuthService + Send + Sync>> = Data::new(auth_service);
+    let auth_service_data: Data<Arc<dyn AuthService + Send + Sync>> = Data::new(auth_service.clone());
 
     let airport_service = new_airport_service(city_repo.clone(), airport_repo.clone());
     let airport_service_data: Data<Arc<dyn AirportService + Send + Sync>> = Data::new(airport_service.clone());
@@ -110,6 +107,8 @@ async fn main() -> std::io::Result<()>{
 
     let user_repo_data: Data<Arc<dyn UserRepository + Send + Sync>> = Data::new(user_repo.clone());
 
+    //let jwt_extractor = new_jwt_extractor(auth_service.clone());
+
     let app = HttpServer::new(move || {
         App::new()
             .app_data(airport_service_data.clone())
@@ -117,20 +116,8 @@ async fn main() -> std::io::Result<()>{
             .app_data(city_service_data.clone())
             .app_data(comment_service_data.clone())
             .app_data(user_repo_data.clone())
-            .wrap_fn(|mut req, srv| {
-                let found = req.headers().contains_key("request-id");
-                if !found {
-                    let id = uuid::Uuid::new_v4().to_string();
-                    let id_header = HeaderValue::from_str(id.as_str()).unwrap();
-                    let headers = req.headers_mut();
-                    headers.append(HeaderName::from_static("request-id"), id_header);
-                };
-                let fut = srv.call(req);
-                async move {
-                    let res = fut.await?;
-                    Ok(res) 
-                }
-            })
+            .wrap(RequestId)
+            //.wrap(jwt_extractor)
             .configure(init_hello)
             .configure(init_city)
             .configure(init_user)

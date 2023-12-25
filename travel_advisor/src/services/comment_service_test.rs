@@ -3,6 +3,7 @@ mod airport_service_test {
 
     use std::{sync::Arc, time::SystemTime};
 
+    use actix_web::HttpMessage;
     use mockall::{
         mock,
         predicate::eq,
@@ -92,6 +93,32 @@ mod airport_service_test {
         assert!(comment.is_err());
         let err = comment.err().unwrap();
         assert!(matches!(err, Error::NotFound(_)));
+    }
+
+    type Meters = u32;
+    type Feet = u32;
+
+    pub struct MeterWrap {
+        m: Meters,
+    }
+
+    pub struct FeetWrap {
+        f: Feet,
+    }
+
+    #[test]
+    fn test_my_code() {
+        let m: Meters = 3;
+        let f: Feet = 3;
+        //assert_eq!(m, f);
+        let mut req = actix_web::test::TestRequest::default();
+        let mut sr = req.to_srv_request();
+        let mut ex = sr.extensions_mut();
+        ex.insert(MeterWrap { m: 3 });
+        ex.insert(FeetWrap { f: 2 });
+        let q = ex.get::<MeterWrap>().unwrap();
+        assert_eq!(3, q.m);
+        assert_eq!(2, ex.get::<FeetWrap>().unwrap().f);
     }
 
 }

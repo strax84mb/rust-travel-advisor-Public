@@ -22,23 +22,24 @@ use crate::{
     util::Error,
 };
 use super::{
+    get_user_if_has_roles,
     dtos::AirportDto,
-    validations::{
-        extract_auth,
-        string_to_id,
-    },
+    validations::string_to_id,
 };
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(get_airports)
+    cfg.service(
+        web::scope("/v1/airports")
+        .service(get_airports)
         .service(get_airport_by_id)
         .service(create_airpot)
         .service(update_airpot)
         .service(delete_airpot)
-        .service(upload_airpots);
+        .service(upload_airpots)
+    );
 }
 
-#[get("/v1/airports")]
+#[get("")]
 async fn get_airports(
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
 ) -> Result<web::Json<Vec<AirportDto>>, Error> {
@@ -52,7 +53,7 @@ async fn get_airports(
     Ok(web::Json(result))
 }
 
-#[get("/v1/airports/{id}")]
+#[get("/{id}")]
 async fn get_airport_by_id(
     id: web::Path<String>,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
@@ -72,7 +73,7 @@ async fn get_airport_by_id(
     }
 }
 
-#[post("/v1/airports")]
+#[post("")]
 async fn create_airpot(
     req: HttpRequest,
     payload: web::Bytes,
@@ -80,11 +81,7 @@ async fn create_airpot(
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> Result<web::Json<AirportDto>, Error> {
     // validate access right
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Err(err) => return Err(err),
-        Ok(has_rights) if !has_rights => return Err(Error::unauthorized_str("user has no rights for this operation")),
-        _ => (),
-    };
+    get_user_if_has_roles!(req, auth_service, vec!["admin"]);
     // deserialize
     let dto: AirportDto = match serde_json::from_slice(payload.to_vec().as_slice()) {
         Ok(v) => v,
@@ -98,7 +95,7 @@ async fn create_airpot(
     }
 }
 
-#[put("/v1/airports/{id}")]
+#[put("/{id}")]
 async fn update_airpot(
     req: HttpRequest,
     payload: web::Bytes,
@@ -106,11 +103,7 @@ async fn update_airpot(
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> Result<impl Responder, Error> {
     // validate access right
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Err(err) => return Err(err),
-        Ok(has_rights) if !has_rights => return Err(Error::unauthorized_str("user has no rights for this operation")),
-        _ => (),
-    };
+    get_user_if_has_roles!(req, auth_service, vec!["admin"]);
     // deserialize
     let dto: AirportDto = match serde_json::from_slice(payload.to_vec().as_slice()) {
         Ok(v) => v,
@@ -124,18 +117,14 @@ async fn update_airpot(
     }
 }
 
-#[delete("/v1/airports/{id}")]
+#[delete("/{id}")]
 async fn delete_airpot(
     req: HttpRequest,
     id: web::Path<String>,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>,
 ) -> Result<impl Responder, Error> {
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Err(err) => return Err(err),
-        Ok(has_rights) if !has_rights => return Err(Error::unauthorized_str("user has no rights for this operation")),
-        _ => (),
-    };
+    get_user_if_has_roles!(req, auth_service, vec!["admin"]);
     // check param
     let id = match string_to_id(id.to_string()) {
         Ok(id) => id,
@@ -148,7 +137,7 @@ async fn delete_airpot(
     }
 }
 
-#[post("/v1/airports/upload")]
+#[post("/upload")]
 async fn upload_airpots(
     req: HttpRequest,
     payload: web::Bytes,
@@ -156,11 +145,7 @@ async fn upload_airpots(
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> Result<impl Responder, Error> {
     // validate access right
-    match auth_service.has_role(extract_auth(&req), vec!["admin"]) {
-        Err(err) => return Err(err),
-        Ok(has_rights) if !has_rights => return Err(Error::unauthorized_str("user has no rights for this operation")),
-        _ => (),
-    };
+    get_user_if_has_roles!(req, auth_service, vec!["admin"]);
     // save airports
     match airport_service.into_inner().save_airports(payload.to_vec().as_slice()) {
         Ok(()) => Ok(HttpResponse::Ok().finish()),

@@ -3,9 +3,10 @@ use std::sync::Arc;
 use actix_web::{
     get,
     post,
+    HttpRequest,
     HttpResponse,
     Responder,
-    web,
+    web, http::header::HeaderName,
 };
 use serde::Serialize;
 
@@ -29,7 +30,14 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 }
 
 #[get("")]
-async fn hello_world() -> impl Responder {
+async fn hello_world(req: HttpRequest) -> impl Responder {
+    match req.headers().get(HeaderName::from_static("request-id")) {
+        Some(hv) => match hv.to_str() {
+            Ok(v) => println!(">>> {} <<<", v),
+            Err(err) => println!(">>> Error >>> {} <<<", err.to_string()),
+        },
+        None => (),
+    };
     HttpResponse::Ok().body("World!")
 }
 

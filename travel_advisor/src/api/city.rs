@@ -8,9 +8,8 @@ use actix_web::{
         Data,
     },
     Responder,
-    HttpResponse,
+    HttpResponse, HttpRequest,
 };
-use test_annotations::roles;
 
 use crate::{
     AuthService,
@@ -19,15 +18,9 @@ use crate::{
     
 };
 use super::{
+    get_user_if_has_roles,
     dtos::CityDto,
-    validations::{
-        extract_auth,
-        string_to_id,
-    },
-    responses::{
-        respond_unauthorized,
-        resolve_error,
-    },
+    validations::string_to_id,
 };
 
 pub fn init(cfg: &mut web::ServiceConfig) {
@@ -78,9 +71,12 @@ async fn  get_city_by_id(
 #[post("/v1/cities")]
 //#[roles("admin")]
 async fn upload_cities(
+    req: HttpRequest,
     payload: web::Bytes,
+    auth_service: Data<Arc<dyn AuthService + Send + Sync>>,
     city_service: Data<Arc<dyn CityService + Send + Sync>>,
 ) -> Result<impl Responder, Error> {
+    get_user_if_has_roles!(req, auth_service, vec!["admin"]);
     match city_service.into_inner().save_cities(payload.to_vec().as_slice()) {
         Ok(()) => Ok(HttpResponse::Created().body("saved all cities")),
         Err(err) => Err(err),

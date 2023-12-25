@@ -40,5 +40,5 @@ pub trait CommentService {
 pub trait AuthService {
     fn create_jwt(&self, user: User) -> Result<UserData, Error>;
     fn get_user(&self, header: Option<Result<&str, ToStrError>>) -> Result<User, Error>;
-    fn has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<bool, Error>;
+    fn get_user_if_has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<Option<User>, Error>;
 }
