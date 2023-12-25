@@ -21,7 +21,7 @@ use crate::{
 use super::{
     get_user_if_has_roles,
     dtos::CityDto,
-    validations::string_to_id,
+    validations::get_number,
 };
 
 pub fn init(cfg: &mut web::ServiceConfig) {
@@ -53,10 +53,7 @@ async fn  get_city_by_id(
     city_service: Data<Arc<dyn CityService + Send + Sync>>,
 ) -> Result<web::Json<CityDto>, Error> {
     // get id
-    let city_id = match string_to_id(id.to_string()) {
-        Ok(v) => v,
-        Err(err) => return Err(Error::bad_request(format!("failed to parse city ID: {}", err.to_string()))),
-    };
+    let city_id = get_number!(id, i64, true);
     // load city
     let city = match city_service.into_inner().get_full(city_id) {
         Ok(city) => match city {

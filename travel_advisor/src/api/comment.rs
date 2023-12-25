@@ -26,7 +26,7 @@ use crate::{
 use super::{
     get_user_if_has_roles,
     dtos::CommentDto,
-    validations::string_to_id,
+    validations::get_number,
 };
 
 pub fn init(cfg: &mut web::ServiceConfig) {
@@ -51,11 +51,7 @@ pub async fn get_comments_for_user(
     comment_service: Data<Arc<dyn CommentService + Send + Sync>>,
 ) -> Result<web::Json<Vec<CommentDto>>, Error> {
     // check param
-    let id = match string_to_id(id.to_string()) {
-        Ok(id) => id,
-        Err(err) => return Err(Error::bad_request(err.to_string())),
-    };
-
+    let id = get_number!(id, i64, true);
     handle_comment_vec(comment_service.into_inner().list_for_user(id))
 }
 
@@ -65,10 +61,7 @@ pub async fn get_comments_for_city(
     comment_service: Data<Arc<dyn CommentService + Send + Sync>>,
 ) -> Result<web::Json<Vec<CommentDto>>, Error> {
     // check param
-    let id = match string_to_id(id.to_string()) {
-        Ok(id) => id,
-        Err(err) => return Err(Error::bad_request(err.to_string())),
-    };
+    let id = get_number!(id, i64, true);
     handle_comment_vec(comment_service.into_inner().list_for_city(id))
 }
 
@@ -91,10 +84,7 @@ async fn save_comment(
 ) -> Result<web::Json<CommentDto>, Error> {
     let user = get_user_if_has_roles!(req, auth_service, vec!["admin", "user"]);
     // check path params
-    let city_id = match string_to_id(city_id.to_string()) {
-        Ok(id) => id,
-        Err(err) => return Err(Error::bad_request(err.to_string())),
-    };
+    let city_id = get_number!(city_id, i64, true);
     // extract payload
     let mut comment = payload.0;
     comment.city_id = city_id;
@@ -119,12 +109,8 @@ async fn update_comment(
     comment_service: Data<Arc<dyn CommentService + Send + Sync>>,
 ) -> Result<impl Responder, Error> {
     let user = get_user_if_has_roles!(req, auth_service, vec!["admin", "user"]);
-    let comment_service = comment_service.into_inner();
     // extract path parameters
-    let comment_id = match string_to_id(comment_id.to_string()) {
-        Ok(id) => id,
-        Err(err) => return Err(Error::bad_request(err.to_string())),
-    };
+    let comment_id = get_number!(comment_id, i64, true);
     // load comment
     let mut comment = match comment_service.get_by_id(comment_id) {
         Ok(comment) => match comment {
@@ -161,10 +147,7 @@ async fn delete_comment(
 ) -> Result<impl Responder, Error> {
     let user = get_user_if_has_roles!(req, auth_service, vec!["admin", "user"]);
     // extract path parameters
-    let comment_id = match string_to_id(comment_id.to_string()) {
-        Ok(id) => id,
-        Err(_) => return Err(Error::bad_request("invalid comment ID".to_string())),
-    };
+    let comment_id = get_number!(comment_id, i64, true);
     // delete comment
     match comment_service.into_inner().delete(comment_id, user) {
         Ok(()) => Ok(HttpResponse::Ok().finish()),

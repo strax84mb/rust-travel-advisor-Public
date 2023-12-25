@@ -26,6 +26,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
                     .to(take_test_for_a_ride)
             ).service(test_save_city)
             .service(hello_with_json_payloads)
+            .service(number_parse)
     );
 }
 
@@ -141,4 +142,19 @@ async fn hello_with_json_payloads(
             }
         )),
     }
+}
+
+#[derive(Serialize)]
+struct NumberParseResponse {
+    num: i64,
+}
+
+#[get("/number-parse/{num}")]
+async fn number_parse(
+    num: web::Path<String>,
+) -> Result<web::Json<NumberParseResponse>, crate::util::Error> {
+    let q = super::validations::get_number!(num, i64, true);
+    Ok(web::Json(NumberParseResponse {
+        num: q,
+    }))
 }

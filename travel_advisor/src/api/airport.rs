@@ -24,7 +24,7 @@ use crate::{
 use super::{
     get_user_if_has_roles,
     dtos::AirportDto,
-    validations::string_to_id,
+    validations::get_number,
 };
 
 pub fn init(cfg: &mut web::ServiceConfig) {
@@ -59,10 +59,7 @@ async fn get_airport_by_id(
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
 ) -> Result<web::Json<AirportDto>, Error> {
     // check param
-    let id = match string_to_id(id.to_string()) {
-        Ok(id) => id,
-        Err(err) => return Err(Error::bad_request(format!("invalid ID: {}", err.to_string()))),
-    };
+    let id = get_number!(id, i64, true);
     // load airport
     match airport_service.into_inner().get_by_id(id) {
         Ok(airport) => match airport {
@@ -126,10 +123,7 @@ async fn delete_airpot(
 ) -> Result<impl Responder, Error> {
     get_user_if_has_roles!(req, auth_service, vec!["admin"]);
     // check param
-    let id = match string_to_id(id.to_string()) {
-        Ok(id) => id,
-        Err(err) => return Err(Error::bad_request(err.to_string())),
-    };
+    let id = get_number!(id, i64, true);
     // delete airport
     match airport_service.into_inner().delete(id) {
         Ok(()) => Ok(HttpResponse::Ok().finish()),

@@ -29,7 +29,7 @@ async fn login(
     user_repo: Data<Arc<dyn UserRepository + Send + Sync>>,
 ) -> Result<web::Json<LoginResponse>, Error> {
     let request = payload.into_inner();
-    let user = match user_repo.into_inner().get_by_email_and_pass(request.email, request.pass) {
+    let user = match user_repo.get_by_email_and_pass(request.email, request.pass) {
         Ok(user) => match user {
             Some(user) => user,
             None => return Err(Error::not_found("incorrect email or password".to_string())),
