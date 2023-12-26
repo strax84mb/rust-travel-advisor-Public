@@ -21,7 +21,6 @@ pub mod comments {
                 DbRead,
                 DbSave,
                 DbDelete,
-                GetDbConnection,
             },
         },
         storage::{

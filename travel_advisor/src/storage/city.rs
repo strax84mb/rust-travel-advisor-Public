@@ -15,7 +15,6 @@ pub mod cities {
             ErrorCode::{
                 DbRead,
                 DbSave,
-                GetDbConnection,
             },
         },
     };

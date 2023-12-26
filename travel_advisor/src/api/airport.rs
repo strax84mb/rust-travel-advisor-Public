@@ -23,7 +23,12 @@ use crate::{
 };
 use super::{
     get_user_if_has_roles,
-    dtos::AirportDto,
+    dtos::{
+        FromModel,
+        ToModel,
+        AirportDto,
+        CreateAirportDto,
+    },
     validations::get_number,
 };
 
@@ -80,7 +85,7 @@ async fn create_airpot(
     // validate access right
     get_user_if_has_roles!(req, auth_service, vec!["admin"]);
     // deserialize
-    let dto: AirportDto = match serde_json::from_slice(payload.to_vec().as_slice()) {
+    let dto: CreateAirportDto = match serde_json::from_slice(payload.to_vec().as_slice()) {
         Ok(v) => v,
         Err(err) => return Err(Error::bad_request(format!("incorrect payload: {}", err.to_string()))),
     };
@@ -96,17 +101,24 @@ async fn create_airpot(
 async fn update_airpot(
     req: HttpRequest,
     payload: web::Bytes,
+    id: web::Path<String>,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> Result<impl Responder, Error> {
     // validate access right
     get_user_if_has_roles!(req, auth_service, vec!["admin"]);
+    // get id
+    let airport_id = get_number!(id, i64);
     // deserialize
-    let dto: AirportDto = match serde_json::from_slice(payload.to_vec().as_slice()) {
+    let dto: CreateAirportDto = match serde_json::from_slice(payload.to_vec().as_slice()) {
         Ok(v) => v,
         Err(err) => return Err(Error::bad_request(format!("incorrect payload: {}", err.to_string()))),
     };
-    let airport = dto.to_model();
+    let airport = {
+        let mut airport_mut = dto.to_model();
+        airport_mut.id = airport_id;
+        airport_mut
+    };
     // save new airport
     match airport_service.into_inner().update(airport) {
         Ok(()) => Ok(HttpResponse::Created().finish()),

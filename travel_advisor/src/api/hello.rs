@@ -17,7 +17,10 @@ use crate::{
     services::traits::CityService,
     util::Error,
 };
-use super::dtos::CityDto;
+use super::dtos::{
+    FromModel,
+    CityDto,
+};
  
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(

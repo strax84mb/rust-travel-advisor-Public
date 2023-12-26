@@ -18,16 +18,6 @@ impl Database {
             conns: Arc::new(pool),
          })
     }
-
-    // this does not work !!!
-    /*pub fn get_connection(&self) -> Result<&mut PooledConnection<ConnectionManager<MysqlConnection>>, String> {
-        let conn = self.conns.as_ref();
-        let mut pooled_result = conn.get();
-        match pooled_result.as_mut() {
-            Ok(connection) => Ok(connection),
-            Err(err) => return Err(err.to_string()),
-        }
-    }*/
 }
 
 #[macro_use]
@@ -37,7 +27,7 @@ pub mod db_macros {
         ($payload:expr) => {
             match $payload.conns.to_owned().get() {
                 Ok(connection) => connection,
-                Err(err) => return Err(Error::internal(GetDbConnection, err.to_string())),
+                Err(err) => return Err(Error::internal(crate::util::ErrorCode::GetDbConnection, err.to_string())),
             }
         };
     }

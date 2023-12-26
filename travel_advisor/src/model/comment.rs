@@ -1,11 +1,6 @@
 use std::time::SystemTime;
 
-use serde::{
-    Serialize,
-    Deserialize,
-};
-
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Clone)]
 pub struct Comment {
     pub id: i64,
     pub user_id: i64,

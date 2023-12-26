@@ -1,6 +1,6 @@
 use csv::StringRecord;
 
-use crate::util::app_errors::Error;
+use crate::util::Error;
 
 pub trait FromStringRecord {
     type Output;

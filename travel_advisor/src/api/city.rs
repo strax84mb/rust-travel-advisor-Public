@@ -20,7 +20,10 @@ use crate::{
 };
 use super::{
     get_user_if_has_roles,
-    dtos::CityDto,
+    dtos::{
+        FromModel,
+        CityDto,
+    },
     validations::get_number,
 };
 

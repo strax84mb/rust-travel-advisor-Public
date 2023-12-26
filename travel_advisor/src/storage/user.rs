@@ -7,10 +7,7 @@ pub mod users {
         Database,
         util::{
             Error,
-            ErrorCode::{
-                DbRead,
-                GetDbConnection,
-            },
+            ErrorCode::DbRead,
         },
         model::{
             User,

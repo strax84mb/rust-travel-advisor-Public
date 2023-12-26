@@ -20,6 +20,7 @@ use crate::model::{
     Airport,
     City,
     Comment,
+    Route,
 };
 
 #[derive(Queryable, Selectable, Identifiable, Insertable, PartialEq)]
@@ -74,15 +75,6 @@ impl AirportDB {
     }
 }
 
-#[derive(Selectable, Queryable, Identifiable)]
-#[diesel(table_name = crate::schema::routes)]
-pub struct Route {
-    pub id: i64,
-    pub start: i64,
-    pub finish: i64,
-    pub price: i64,
-}
-
 #[derive(Selectable, Queryable, Identifiable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::comments)]
 pub struct CommentDB {
@@ -117,4 +109,32 @@ pub struct InsertCommentDB {
     pub user_id: i64,
     pub city_id: i64,
     pub text: String,
+}
+
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = crate::schema::routes)]
+pub struct RouteDB {
+    pub id: i64,
+    pub start: i64,
+    pub finish: i64,
+    pub price: i64,
+}
+
+impl RouteDB {
+    pub fn to_model(&self) -> Route {
+        Route {
+            id: self.id.clone(),
+            start: self.start.clone(),
+            finish: self.finish.clone(),
+            price: self.price.clone(),
+        }
+    }
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::routes)]
+pub struct InsertRouteDB {
+    pub start: i64,
+    pub finish: i64,
+    pub price: i64,
 }

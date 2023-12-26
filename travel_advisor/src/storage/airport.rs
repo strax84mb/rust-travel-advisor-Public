@@ -11,7 +11,6 @@ pub mod airports {
                 DbRead,
                 DbSave,
                 DbDelete,
-                GetDbConnection,
             },
         },
         schema::airports as air_sch,
