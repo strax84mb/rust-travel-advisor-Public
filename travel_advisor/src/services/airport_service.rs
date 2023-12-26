@@ -15,10 +15,9 @@ pub mod services {
         services::traits::AirportService,
         storage::{
             AirportRepository,
-    //        CityRepository,
+            CityRepository,
         },
     };
-    use crate::CityRepository;
     use super::super::macros::log_if_error;
 
     pub fn new_airport_service(

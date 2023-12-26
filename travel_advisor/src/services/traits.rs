@@ -6,6 +6,7 @@ use crate::{
         Airport,
         City,
         Comment,
+        Route,
         User,
     },
 };
@@ -41,4 +42,13 @@ pub trait AuthService {
     fn create_jwt(&self, user: User) -> Result<UserData, Error>;
     fn get_user(&self, header: Option<Result<&str, ToStrError>>) -> Result<User, Error>;
     fn get_user_if_has_role(&self, header: Option<Result<&str, ToStrError>>, roles: Vec<&str>) -> Result<Option<User>, Error>;
+}
+
+pub trait RouteService {
+    fn get_all(&self, offset: i64, limit: i64) -> Result<Vec<Route>, Error>;
+    fn find_by_id(&self, id: i64) -> Result<Option<Route>, Error>;
+    fn save_routes(&self, sv_text: &[u8]) -> Result<(), Error>;
+    fn update(&self, route: Route) -> Result<(), Error>;
+    fn delete(&self, id: i64) -> Result<(), Error>;
+    fn find_cheapest_route(&self, start: i64, finish: i64) -> Result<Vec<Route>, Error>;
 }

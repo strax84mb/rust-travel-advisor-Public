@@ -2,6 +2,7 @@ mod auth;
 mod airport_service;
 mod city_service;
 mod comment_service;
+mod route_service;
 pub mod traits;
 mod macros;
 
