@@ -1,9 +1,10 @@
 mod airport;
 mod city;
 mod comment;
-mod common;
+pub(super) mod common;
 mod route;
 mod user;
+pub(super) mod best_route;
 
 pub type Airport = airport::Airport;
 pub type User = user::User;

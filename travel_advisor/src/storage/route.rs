@@ -34,7 +34,7 @@ pub mod routes {
         fn new(&self, route: Route) -> Result<Route, Error>;
         fn update(&self, route: Route) -> Result<(), Error>;
         fn delete(&self, id: i64) -> Result<(), Error>;
-        fn find_by_start(&self, start: i64, exclude_finishes: Option<Vec<i64>>) -> Result<Vec<Route>, Error>;
+        fn find_by_start(&self, start: Vec<i64>, exclude_finishes: Option<Vec<i64>>) -> Result<Vec<Route>, Error>;
     }
 
     struct RouteRepositoryImpl {
@@ -137,10 +137,10 @@ pub mod routes {
             }
         }
 
-        fn find_by_start(&self, start: i64, exclude_finishes: Option<Vec<i64>>) -> Result<Vec<Route>, Error> {
+        fn find_by_start(&self, start: Vec<i64>, exclude_finishes: Option<Vec<i64>>) -> Result<Vec<Route>, Error> {
             let conn = &mut get_connection_v2!(self.db);
             let mut builder = route_dsl::routes.into_boxed();
-            builder = builder.filter(route_dsl::start.eq(start.clone()));
+            builder = builder.filter(route_dsl::start.eq_any(start.clone()));
             if exclude_finishes.is_some() {
                 builder = builder.filter(route_dsl::finish.ne_all(exclude_finishes.unwrap()));
             }

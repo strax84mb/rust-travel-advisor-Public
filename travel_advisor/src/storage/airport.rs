@@ -31,6 +31,7 @@ pub mod airports {
         fn update(&self, airport: Airport) -> Result<(), Error>;
         fn delete(&self, id: i64) -> Result<(), Error>;
         fn get_by_city_id(&self, city_id: i64) -> Result<Vec<Airport>, Error>;
+        fn get_ids_by_city_ids(&self, city_ids: Vec<i64>) -> Result<Vec<i64>, Error>;
     }
 
     struct AirportRepositoryImpl {
@@ -142,6 +143,25 @@ pub mod airports {
                 }
         }
 
+        fn get_ids_by_city_ids(&self, route_ids: Vec<i64>) -> Result<Vec<i64>, Error> {
+            let conn = &mut get_connection_v2!(self.db);
+            let city_ids: Vec<i64> = match air_sch::dsl::airports
+                .filter(air_sch::dsl::id.eq_any(route_ids))
+                .select(air_sch::columns::city_id)
+                .distinct()
+                .load(conn) {
+                    Ok(result) => result,
+                    Err(err) => return Err(Error::internal(DbRead, err.to_string())),
+                };
+            match air_sch::dsl::airports
+                .filter(air_sch::dsl::city_id.eq_any(city_ids))
+                .select(air_sch::columns::id)
+                .distinct()
+                .load(conn) {
+                    Ok(result) => Ok(result),
+                    Err(err) => Err(Error::internal(DbRead, err.to_string())),
+                }
+        }
     }
 
 }

@@ -5,7 +5,7 @@ use crate::util::{
 };
 use super::common::FromStringRecord;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Route {
     pub id: i64,
     pub start: i64,
