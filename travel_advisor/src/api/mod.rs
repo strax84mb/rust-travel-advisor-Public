@@ -5,6 +5,7 @@ mod dtos;
 mod hello;
 mod users;
 mod validations;
+mod routes;
 
 pub use hello::hello_world;
 
@@ -13,6 +14,7 @@ pub use city::init as init_city;
 pub use users::init as init_user;
 pub use airport::init as init_airport;
 pub use comment::init as init_comments;
+pub(super) use routes::init as init_routes;
 
 
 #[macro_use]

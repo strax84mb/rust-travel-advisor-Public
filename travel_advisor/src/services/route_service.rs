@@ -7,11 +7,12 @@ pub mod services {
         model::{
             common::FromStringRecord,
             Route,
-            best_route::BestRoute,
+            best_route::BestRoute, Airport, City,
         },
         storage::{
-            routes::RouteRepository,
             AirportRepository,
+            CityRepository,
+            routes::RouteRepository,
         },
         util::{
             Error,
@@ -26,16 +27,19 @@ pub mod services {
     pub fn new_route_service(
         route_repo: Arc<dyn RouteRepository + Sync + Send>,
         airport_repo: Arc<dyn AirportRepository + Sync + Send>,
+        city_repo: Arc<dyn CityRepository + Sync + Send>,
     ) -> Arc<impl RouteService> {
         Arc::new(RouteServiceImpl {
             route_repo: route_repo,
             airport_repo: airport_repo,
+            city_repo: city_repo,
         })
     }
 
     struct RouteServiceImpl {
         route_repo: Arc<dyn RouteRepository + Sync + Send>,
         airport_repo: Arc<dyn AirportRepository + Sync + Send>,
+        city_repo: Arc<dyn CityRepository + Sync + Send>,
     }
 
     impl RouteService for RouteServiceImpl {
@@ -85,7 +89,7 @@ pub mod services {
             Ok(())
         }
 
-        fn find_cheapest_route(&self, start: i64, finish: i64) -> Result<Vec<Route>, Error> {
+        fn find_cheapest_route(&self, start: i64, finish: i64) -> Result<(Vec<Route>, Vec<Airport>, Vec<City>), Error> {
             let start_airports = match self.airport_repo.get_by_city_id(start) {
                 Ok(airports) => airports,
                 Err(err) => {
@@ -100,35 +104,49 @@ pub mod services {
                     return Err(err.wrap_str("failed to load airports at destination city"));
                 },
             };
-            let ex = self.extend_id_vec();
             let (mut best_route_finder, mut start) = BestRoute::new(
                 start_airports[0].id.clone(),
                 finish_airports.iter().map(|a| a.id.clone()).collect(),
                 self.route_repo.clone(),
                 self.airport_repo.clone(),
             );
-            let q = self.extend_id_vec();
-            let w = q(vec![]);
-            best_route_finder.search_for_best_path(
-                &mut start,
-            );
+            let route_ids = match best_route_finder.search_for_best_path(&mut start) {
+                Ok(opt) => match opt {
+                    Some(ids) => ids,
+                    None => return Err(Error::not_found("no route found".to_string())),
+                },
+                Err(err) => return Err(err.wrap_str("failed to calculate cheapest route")),
+            };
+            let routes = match self.route_repo.find_by_ids(route_ids.clone()) {
+                Ok(routes) => routes,
+                Err(err) => return Err(err.wrap(
+                    format!("failed to get routes for IDs ({:?})", route_ids),
+                )),
+            };
+            let mut airport_ids = routes.iter()
+                .flat_map(|r| vec![r.start.clone(), r.finish.clone()])
+                .collect::<Vec<i64>>();
+            airport_ids.sort();
+            airport_ids.dedup();
+            let airports = match self.airport_repo.get_by_ids(airport_ids.clone()) {
+                Ok(airports) => airports,
+                Err(err) => return Err(err.wrap(format!(
+                    "failed to get airports for IDs ({:?})", airport_ids
+                ))),
+            };
+            let mut city_ids = airports.iter()
+                .map(|a| a.city_id.clone())
+                .collect::<Vec<i64>>();
+            city_ids.sort();
+            city_ids.dedup();
+            let cities = match self.city_repo.get_by_ids(city_ids.clone()) {
+                Ok(cities) => cities,
+                Err(err) => return Err(err.wrap(format!(
+                    "failed to get cities for IDs ({:?})", city_ids
+                ))),
+            };
 
-            todo!("do this")
-        }
-    }
-
-    impl RouteServiceImpl {
-        fn get_possible_destinations(&self) -> Box<dyn Fn(Vec<i64>, Vec<i64>) -> Result<Vec<Route>, Error>> {
-            Box::new(|start_points: Vec<i64>, ids_to_exclude| {
-                Ok(vec![])
-            })
-        }
-
-        fn extend_id_vec(&self) -> Box<dyn Fn(Vec<i64>) -> Result<Vec<i64>, Error> + '_> {
-            Box::new(|ids| {
-                let _q = self.airport_repo.get_by_city_id(1);
-                Ok(vec![])
-            })
+            Ok((routes, airports, cities))
         }
     }
 }

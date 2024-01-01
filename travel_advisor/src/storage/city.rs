@@ -26,6 +26,7 @@ pub mod cities {
 
     pub trait CityRepository {
         fn get_all(&self) -> Result<Vec<City>, Error>;
+        fn get_by_ids(&self, ids: Vec<i64>) -> Result<Vec<City>, Error>;
         fn get_by_id(&self, id: i64) -> Result<Option<City>, Error>;
         fn new(&self, name: String) -> Result<City, Error>;
         fn get_by_name(&self, name: String) -> Result<Option<City>, Error>;
@@ -110,6 +111,16 @@ pub mod cities {
                 }
         }
 
+        fn get_by_ids(&self, ids: Vec<i64>) -> Result<Vec<City>, Error> {
+            let conn = &mut get_connection_v2!(self.db);
+            match cities
+                .filter(id.eq_any(ids))
+                .select(CityDB::as_select())
+                .load(conn) {
+                    Ok(result) => Ok(result.iter().map(|c| c.to_city()).collect()),
+                    Err(err) => Err(Error::internal(DbRead, err.to_string())),
+                }
+        }
     }
 
 }

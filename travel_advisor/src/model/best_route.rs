@@ -162,7 +162,7 @@ pub mod testing {
 
     #[test]
     fn test_changing_boxed_contents() {
-        let mut num = NumContent {
+        let num = NumContent {
             num: 5,
         };
         let mut boxed = Box::new(num);
@@ -170,13 +170,11 @@ pub mod testing {
             let refed = boxed.as_mut();
             refed.num += 1;
         }
-        let q = boxed.as_ref();
         let addr = &mut boxed;
         {
             let w = addr.as_mut();
             w.num += 1;
         }
-        let r = Box::new(addr.as_ref());
         addr.num;
         println!("{}", boxed.num.clone());
     }

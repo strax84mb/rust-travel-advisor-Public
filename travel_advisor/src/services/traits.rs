@@ -50,5 +50,5 @@ pub trait RouteService {
     fn save_routes(&self, sv_text: &[u8]) -> Result<(), Error>;
     fn update(&self, route: Route) -> Result<(), Error>;
     fn delete(&self, id: i64) -> Result<(), Error>;
-    fn find_cheapest_route(&self, start: i64, finish: i64) -> Result<Vec<Route>, Error>;
+    fn find_cheapest_route(&self, start: i64, finish: i64) -> Result<(Vec<Route>, Vec<Airport>, Vec<City>), Error>;
 }

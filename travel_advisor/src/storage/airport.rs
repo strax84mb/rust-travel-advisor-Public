@@ -27,6 +27,7 @@ pub mod airports {
     pub trait AirportRepository {
         fn get_all(&self) -> Result<Vec<Airport>, Error>;
         fn get_by_id(&self, id: i64) -> Result<Option<Airport>, Error>;
+        fn get_by_ids(&self, ids: Vec<i64>) -> Result<Vec<Airport>, Error>;
         fn new(&self, airport: &Airport) -> Result<Airport, Error>;
         fn update(&self, airport: Airport) -> Result<(), Error>;
         fn delete(&self, id: i64) -> Result<(), Error>;
@@ -160,6 +161,17 @@ pub mod airports {
                 .load(conn) {
                     Ok(result) => Ok(result),
                     Err(err) => Err(Error::internal(DbRead, err.to_string())),
+                }
+        }
+
+        fn get_by_ids(&self, ids: Vec<i64>) -> Result<Vec<Airport>, Error> {
+            let conn = &mut get_connection_v2!(self.db);
+            match air_sch::dsl::airports
+                .filter(air_sch::dsl::id.eq_any(ids))
+                .select(AirportDB::as_select())
+                .load(conn) {
+                    Ok(result) => Ok(result.iter().map(|a| a.to_model()).collect()),
+                    Err(err) => return Err(Error::internal(DbRead, err.to_string())),
                 }
         }
     }

@@ -31,6 +31,7 @@ use crate::{
         init_user,
         init_airport,
         init_comments,
+        init_routes,
     },
     config::Config,
     middleware::RequestId,
@@ -39,11 +40,13 @@ use crate::{
         new_auth_service,
         new_city_service,
         new_comment_service,
+        new_route_service,
         traits::{
             AirportService,
             AuthService,
             CityService,
             CommentService,
+            RouteService,
         },
     },
     storage::{
@@ -52,10 +55,12 @@ use crate::{
         CityRepository,
         CommentRepository,
         UserRepository,
+        routes::RouteRepository,
         new_airport_repository,
         new_city_repository,
         new_comment_repository,
         new_user_repository,
+        routes::new_route_repository,
     },
 };
 
@@ -89,6 +94,7 @@ async fn main() -> std::io::Result<()>{
     let city_repo: Arc<dyn CityRepository + Sync + Send> = new_city_repository(db_arc.clone());
     let comment_repo: Arc<dyn CommentRepository + Sync + Send> = new_comment_repository(db_arc.clone());
     let user_repo: Arc<dyn UserRepository + Sync + Send> = new_user_repository(db_arc.clone());
+    let route_repo: Arc<dyn RouteRepository + Sync + Send> = new_route_repository(db_arc.clone());
 
     let key = fs::read(config.key_path()).unwrap();
     let key = String::from_utf8(key).unwrap();
@@ -105,6 +111,13 @@ async fn main() -> std::io::Result<()>{
     let comment_service = new_comment_service(comment_repo.clone());
     let comment_service_data: Data<Arc<dyn CommentService + Send + Sync>> = Data::new(comment_service.clone());
 
+    let route_service = new_route_service(
+        route_repo.clone(),
+        airport_repo.clone(),
+        city_repo.clone()
+    );
+    let route_service_data: Data<Arc<dyn RouteService + Send + Sync>> = Data::new(route_service.clone());
+
     let user_repo_data: Data<Arc<dyn UserRepository + Send + Sync>> = Data::new(user_repo.clone());
 
     //let jwt_extractor = new_jwt_extractor(auth_service.clone());
@@ -116,6 +129,7 @@ async fn main() -> std::io::Result<()>{
             .app_data(city_service_data.clone())
             .app_data(comment_service_data.clone())
             .app_data(user_repo_data.clone())
+            .app_data(route_service_data.clone())
             .wrap(RequestId)
             //.wrap(jwt_extractor)
             .configure(init_hello)
@@ -123,6 +137,7 @@ async fn main() -> std::io::Result<()>{
             .configure(init_user)
             .configure(init_airport)
             .configure(init_comments)
+            .configure(init_routes)
         }
     ).bind(config.get_app_url())?;
 

@@ -31,6 +31,7 @@ pub mod routes {
     pub trait RouteRepository {
         fn get_all(&self, offset: i64, limit: i64) -> Result<Vec<Route>, Error>;
         fn find_by_id(&self, id: i64) -> Result<Option<Route>, Error>;
+        fn find_by_ids(&self, ids: Vec<i64>) -> Result<Vec<Route>, Error>;
         fn new(&self, route: Route) -> Result<Route, Error>;
         fn update(&self, route: Route) -> Result<(), Error>;
         fn delete(&self, id: i64) -> Result<(), Error>;
@@ -148,6 +149,17 @@ pub mod routes {
                 Ok(result) => Ok(result.iter().map(|r| r.to_model()).collect()),
                 Err(err) => Err(Error::internal(DbRead, err.to_string())),
             }
+        }
+
+        fn find_by_ids(&self, ids: Vec<i64>) -> Result<Vec<Route>, Error> {
+            let conn = &mut get_connection_v2!(self.db);
+            match route_dsl::routes
+                .filter(route_dsl::id.eq_any(ids))
+                .select(RouteDB::as_select())
+                .load(conn) {
+                    Ok(result) => Ok(result.iter().map(|r| r.to_model()).collect()),
+                    Err(err) => Err(Error::internal(DbRead, err.to_string())),
+                }
         }
     }
 }
