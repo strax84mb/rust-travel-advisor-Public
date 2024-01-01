@@ -9,7 +9,6 @@ pub mod schema;
 mod middleware;
 
 use std::{
-    fs,
     process::exit,
     sync::Arc,
 };
