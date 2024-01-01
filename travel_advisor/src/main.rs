@@ -25,14 +25,6 @@ use actix_web::{
 };
 
 use crate::{
-    api::{
-        init_hello,
-        init_city,
-        init_user,
-        init_airport,
-        init_comments,
-        init_routes,
-    },
     config::Config,
     middleware::RequestId,
     services::{
@@ -74,7 +66,7 @@ async fn main() -> std::io::Result<()>{
             .chan_len(Some(100000))
     ).unwrap();
 
-    let config_file: &'static str = "config.json";
+    let config_file: &'static str = "config.yml";
     let config = Config::from_file(config_file);
     info!("Using configuration file from {0}", config_file);
 
@@ -96,10 +88,7 @@ async fn main() -> std::io::Result<()>{
     let user_repo: Arc<dyn UserRepository + Sync + Send> = new_user_repository(db_arc.clone());
     let route_repo: Arc<dyn RouteRepository + Sync + Send> = new_route_repository(db_arc.clone());
 
-    let key = fs::read(config.key_path()).unwrap();
-    let key = String::from_utf8(key).unwrap();
-
-    let auth_service = new_auth_service(key, user_repo.clone()).expect("could not instantiate auth service");
+    let auth_service = new_auth_service(config.key(), user_repo.clone()).expect("could not instantiate auth service");
     let auth_service_data: Data<Arc<dyn AuthService + Send + Sync>> = Data::new(auth_service.clone());
 
     let airport_service = new_airport_service(city_repo.clone(), airport_repo.clone());
@@ -132,12 +121,12 @@ async fn main() -> std::io::Result<()>{
             .app_data(route_service_data.clone())
             .wrap(RequestId)
             //.wrap(jwt_extractor)
-            .configure(init_hello)
-            .configure(init_city)
-            .configure(init_user)
-            .configure(init_airport)
-            .configure(init_comments)
-            .configure(init_routes)
+            .configure(crate::api::init_hello)
+            .configure(crate::api::init_cities)
+            .configure(crate::api::init_users)
+            .configure(crate::api::init_airports)
+            .configure(crate::api::init_comments)
+            .configure(crate::api::init_routes)
         }
     ).bind(config.get_app_url())?;
 

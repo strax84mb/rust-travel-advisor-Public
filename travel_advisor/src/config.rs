@@ -5,7 +5,7 @@ use std::fs;
 struct AppConfig {
     url: String,
     port: u16,
-    key_path: String,
+    key: String,
 }
 
 #[derive(Deserialize)]
@@ -25,7 +25,7 @@ pub struct Config {
 impl Config {
     pub fn from_file(path: &'static str) -> Self {
         let config = fs::read_to_string(path).unwrap();
-        serde_json::from_str(&config).unwrap()
+        serde_yaml::from_str(&config).unwrap()
     }
 
     pub fn get_app_url(&self) -> String {
@@ -39,7 +39,7 @@ impl Config {
         )
     }
 
-    pub fn key_path(&self) -> String {
-        self.app.key_path.clone()
+    pub fn key(&self) -> String {
+        self.app.key.clone()
     }
 }

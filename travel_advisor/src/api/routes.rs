@@ -28,15 +28,15 @@ use super::{
     dtos::{
         FromModel,
         BestPathDto,
+        CalculateCheapestRouteRequestDto,
+        PaginationQueryParam,
         RouteDto,
         SaveRouteDto,
-        PaginationQueryParam, CalculateCheapestRouteRequestDto,
     },
     validations::get_number,
 };
 
-
-pub fn init(cfg: &mut web::ServiceConfig) {
+pub(super) fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/v1/routes")
             .service(get_all)

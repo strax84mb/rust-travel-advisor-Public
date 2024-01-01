@@ -7,15 +7,29 @@ mod users;
 mod validations;
 mod routes;
 
-pub use hello::hello_world;
+pub fn init_hello(cfg: &mut actix_web::web::ServiceConfig) {
+    hello::init(cfg);
+}
 
-pub use hello::init as init_hello;
-pub use city::init as init_city;
-pub use users::init as init_user;
-pub use airport::init as init_airport;
-pub use comment::init as init_comments;
-pub(super) use routes::init as init_routes;
+pub fn init_cities(cfg: &mut actix_web::web::ServiceConfig) {
+    city::init(cfg);
+}
 
+pub fn init_users(cfg: &mut actix_web::web::ServiceConfig) {
+    users::init(cfg);
+}
+
+pub fn init_airports(cfg: &mut actix_web::web::ServiceConfig) {
+    airport::init(cfg);
+}
+
+pub fn init_comments(cfg: &mut actix_web::web::ServiceConfig) {
+    comment::init(cfg);
+}
+
+pub fn init_routes(cfg: &mut actix_web::web::ServiceConfig) {
+    routes::init(cfg);
+}
 
 #[macro_use]
 pub mod auth_macro {

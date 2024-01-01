@@ -27,7 +27,7 @@ use super::{
     validations::get_number,
 };
 
-pub fn init(cfg: &mut web::ServiceConfig) {
+pub(super) fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(get_cities)
         .service(get_city_by_id)
         .service(upload_cities);

@@ -18,7 +18,7 @@ use super::dtos::{
     LoginResponse,
 };
 
-pub fn init(cfg: &mut web::ServiceConfig) {
+pub(super) fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(login);
 }
 
