@@ -1,5 +1,5 @@
 mod config;
-pub mod api;
+mod api;
 pub mod model;
 pub mod services;
 mod storage;

@@ -13,6 +13,7 @@ use actix_web::{
     HttpResponse,
     Responder,
 };
+use test_annotations::roles;
 
 use crate::{
     services::traits::{
@@ -144,6 +145,7 @@ async fn delete_airpot(
 }
 
 #[post("/upload")]
+#[roles("admin")]
 async fn upload_airpots(
     req: HttpRequest,
     payload: web::Bytes,
@@ -151,7 +153,8 @@ async fn upload_airpots(
     auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> Result<impl Responder, Error> {
     // validate access right
-    get_user_if_has_roles!(req, auth_service, vec!["admin"]);
+    // THIS IS NOT NEEDED !!! Proc macro "roles" does all we need
+    // get_user_if_has_roles!(req, auth_service, vec!["admin"]);
     // save airports
     match airport_service.into_inner().save_airports(payload.to_vec().as_slice()) {
         Ok(()) => Ok(HttpResponse::Ok().finish()),
