@@ -1,17 +1,104 @@
-use std::ops::{
-    Add,
-    Shl,
-    Index,
-    Range,
+use std::{
+    cmp::{
+        PartialEq,
+        PartialOrd,
+    },
+    ops::{
+        Add,
+        Shl,
+        Index,
+        Range,
+    },
 };
 
 struct Meters(i32);
 
-impl Add for Meters {
+impl Add<Meters> for Meters {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         Meters(self.0 + rhs.0)
+    }
+}
+
+impl Add<i32> for Meters {
+    type Output = Self;
+
+    fn add(self, rhs: i32) -> Self::Output {
+        Meters(self.0 + rhs)
+    }
+}
+
+impl PartialEq<i32> for Meters {
+    fn eq(&self, other: &i32) -> bool {
+        self.0 == *other
+    }
+
+    fn ne(&self, other: &i32) -> bool {
+        self.0 != *other
+    }
+}
+
+impl PartialOrd<i32> for Meters {
+    fn ge(&self, other: &i32) -> bool {
+        self.0 >= *other
+    }
+
+    fn gt(&self, other: &i32) -> bool {
+        self.0 > *other
+    }
+
+    fn le(&self, other: &i32) -> bool {
+        self.0 <= *other
+    }
+
+    fn lt(&self, other: &i32) -> bool {
+        self.0 < *other
+    }
+
+    fn partial_cmp(&self, other: &i32) -> Option<std::cmp::Ordering> {
+        match *other {
+            x if self.0 < x => Some(std::cmp::Ordering::Less),
+            x if self.eq(&x) => Some(std::cmp::Ordering::Equal),
+            _ => Some(std::cmp::Ordering::Greater),
+        }
+    }
+}
+
+impl PartialEq<Meters> for Meters {
+    fn eq(&self, other: &Meters) -> bool {
+        self.0 == other.0
+    }
+
+    fn ne(&self, other: &Meters) -> bool {
+        self.0 != other.0
+    }
+}
+
+impl PartialOrd<Meters> for Meters {
+    fn ge(&self, other: &Meters) -> bool {
+        self.0 >= other.0
+    }
+
+    fn gt(&self, other: &Meters) -> bool {
+        self.0 > other.0
+    }
+
+    fn le(&self, other: &Meters) -> bool {
+        self.0 <= other.0
+    }
+
+    fn lt(&self, other: &Meters) -> bool {
+        self.0 < other.0
+    }
+
+    fn partial_cmp(&self, other: &Meters) -> Option<std::cmp::Ordering> {
+        match other.0 {
+            val if self.0 < val => Some(std::cmp::Ordering::Less),
+            val if self.0 == val => Some(std::cmp::Ordering::Equal),
+            val if self.0 > val => Some(std::cmp::Ordering::Greater),
+            _ => None,
+        }
     }
 }
 
