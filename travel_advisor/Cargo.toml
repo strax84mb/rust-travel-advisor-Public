@@ -33,3 +33,11 @@ chrono = "0.4.31"
 derive_more = "0.99.17"
 futures-util = "0.3.29"
 serde_yaml = "0.9.29"
+
+[dev-dependencies]
+bencher = "0.1.5"
+
+[[bench]]
+path = "src/playground/my_tests.rs"
+name = "bench_fn"
+harness = false
