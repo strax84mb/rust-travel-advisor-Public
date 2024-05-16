@@ -35,7 +35,6 @@ fn get_param_name_by_type(param_type: &str, load: String) -> Option<String> {
     match load.find(param_type) {
         None => None,
         Some(pos) => {
-            println!("Print some stuff!!!");
             let mut temp: String = load.chars().skip(0).take(pos).collect();
             let start_pos = match temp.rfind(',') {
                 None => temp.rfind('(').expect("not even first param"),
@@ -102,7 +101,7 @@ pub fn roles(attr: TokenStream, item: TokenStream) -> TokenStream {
             _ => "",
         },
         match auth_service_param {
-            None => "auth_service: actix_web::web::Data<Arc<dyn AuthService + Send + Sync>>,",
+            None => "auth_service: actix_web::web::Data<std::sync::Arc<dyn crate::services::traits::AuthService + std::marker::Send + std::marker::Sync>>,",
             _ => "",
         },
         second,
@@ -110,6 +109,13 @@ pub fn roles(attr: TokenStream, item: TokenStream) -> TokenStream {
         third,
     );
     final_func.parse().expect("failed to process the function")
+}
+
+#[proc_macro_attribute]
+pub fn path_var(attr: TokenStream, item: TokenStream) -> TokenStream {
+    println!("attr >> {}", attr.to_string());
+    println!("item >> {}", item.to_string());
+    item.to_string().parse().expect("")
 }
 
 #[cfg(test)]

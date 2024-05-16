@@ -147,10 +147,8 @@ async fn delete_airpot(
 #[post("/upload")]
 #[roles("admin")]
 async fn upload_airpots(
-    req: HttpRequest,
     payload: web::Bytes,
     airport_service: Data<Arc<dyn AirportService + Send + Sync>>,
-    auth_service: Data<Arc<dyn AuthService + Send + Sync>>
 ) -> Result<impl Responder, Error> {
     // validate access right
     // THIS IS NOT NEEDED !!! Proc macro "roles" does all we need
